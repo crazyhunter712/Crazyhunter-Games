@@ -12,5 +12,12 @@
     "description": "Mankind is dead. Blood is fuel. Hell is full. A fast-paced retro FPS.",
     "thumbnail": "https://picsum.photos/seed/ultrakill/480/270",
     "iframeUrl": "https://ultrakillgame.com/gg/ultrakill/"
+  },
+  {
+    "id": "monkey-island",
+    "title": "The Secret of Monkey Island",
+    "description": "A classic point-and-click adventure game. Follow Guybrush Threepwood's quest to become a pirate.",
+    "thumbnail": "https://archive.org/services/img/msdos_Secret_of_Monkey_Island_The_1990",
+    "iframeUrl": "https://archive.org/embed/msdos_Secret_of_Monkey_Island_The_1990"
   }
 ]
