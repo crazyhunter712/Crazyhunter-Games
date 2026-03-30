@@ -17,6 +17,8 @@ const gameDescription = document.getElementById('game-description');
 const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
 
+const mainContainer = document.getElementById('main-container');
+
 async function init() {
     try {
         const response = await fetch('./src/games.json');
@@ -83,6 +85,8 @@ function openGame(game) {
     
     document.getElementById('grid-view').classList.add('hidden');
     gamePlay.classList.remove('hidden');
+    mainContainer.classList.remove('max-w-7xl');
+    mainContainer.classList.add('max-w-screen-2xl');
     window.scrollTo(0, 0);
 }
 
@@ -91,6 +95,8 @@ function closeGame() {
     gameIframe.src = '';
     document.getElementById('grid-view').classList.remove('hidden');
     gamePlay.classList.add('hidden');
+    mainContainer.classList.remove('max-w-screen-2xl');
+    mainContainer.classList.add('max-w-7xl');
 }
 
 function handleSearch(e) {
@@ -105,12 +111,15 @@ function handleSearch(e) {
 function toggleFullscreen() {
     isFullscreen = !isFullscreen;
     if (isFullscreen) {
-        iframeContainer.classList.add('fixed', 'inset-0', 'z-50', 'bg-black');
-        iframeContainer.classList.remove('h-[calc(100vh-12rem)]', 'rounded-2xl');
+        iframeContainer.classList.add('fixed', 'inset-0', 'z-50', 'bg-black', 'rounded-none');
+        iframeContainer.classList.remove('aspect-video', 'rounded-3xl', 'max-w-7xl', 'mx-auto');
+        fullscreenButton.innerHTML = '<i data-lucide="minimize-2" class="w-5 h-5"></i>';
     } else {
-        iframeContainer.classList.remove('fixed', 'inset-0', 'z-50', 'bg-black');
-        iframeContainer.classList.add('h-[calc(100vh-12rem)]', 'rounded-2xl');
+        iframeContainer.classList.remove('fixed', 'inset-0', 'z-50', 'bg-black', 'rounded-none');
+        iframeContainer.classList.add('aspect-video', 'rounded-3xl');
+        fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
+    lucide.createIcons();
 }
 
 searchInput.addEventListener('input', handleSearch);
