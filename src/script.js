@@ -109,18 +109,28 @@ function handleSearch(e) {
 }
 
 function toggleFullscreen() {
-    isFullscreen = !isFullscreen;
+    if (!document.fullscreenElement) {
+        iframeContainer.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    isFullscreen = !!document.fullscreenElement;
     if (isFullscreen) {
-        iframeContainer.classList.add('fixed', 'inset-0', 'z-50', 'bg-black', 'rounded-none');
-        iframeContainer.classList.remove('aspect-video', 'rounded-3xl', 'max-w-7xl', 'mx-auto');
+        iframeContainer.classList.add('rounded-none', 'border-none');
+        iframeContainer.classList.remove('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="minimize-2" class="w-5 h-5"></i>';
     } else {
-        iframeContainer.classList.remove('fixed', 'inset-0', 'z-50', 'bg-black', 'rounded-none');
-        iframeContainer.classList.add('aspect-video', 'rounded-3xl');
+        iframeContainer.classList.remove('rounded-none', 'border-none');
+        iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
     lucide.createIcons();
-}
+});
 
 searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
