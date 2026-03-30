@@ -1,44 +1,9 @@
 [
   {
-    "id": "2048",
-    "title": "2048",
-    "description": "Join the numbers and get to the 2048 tile!",
-    "thumbnail": "https://picsum.photos/seed/2048/300/200",
-    "iframeUrl": "https://play2048.co/"
-  },
-  {
-    "id": "snake",
-    "title": "Snake",
-    "description": "The classic snake game. Eat the apples and grow longer.",
-    "thumbnail": "https://picsum.photos/seed/snake/300/200",
-    "iframeUrl": "https://snake.googlemaps.com/"
-  },
-  {
-    "id": "tetris",
-    "title": "Tetris",
-    "description": "Stack the blocks and clear the lines.",
-    "thumbnail": "https://picsum.photos/seed/tetris/300/200",
-    "iframeUrl": "https://tetris.com/play-tetris"
-  },
-  {
-    "id": "flappy-bird",
-    "title": "Flappy Bird",
-    "description": "Flap your wings and avoid the pipes.",
-    "thumbnail": "https://picsum.photos/seed/flappy/300/200",
-    "iframeUrl": "https://flappybird.io/"
-  },
-  {
-    "id": "pacman",
-    "title": "Pac-Man",
-    "description": "Eat the dots and avoid the ghosts.",
-    "thumbnail": "https://picsum.photos/seed/pacman/300/200",
-    "iframeUrl": "https://www.google.com/logos/2010/pacman10-i.html"
-  },
-  {
-    "id": "dino-run",
-    "title": "Chrome Dino",
-    "description": "The classic no-internet dinosaur game.",
-    "thumbnail": "https://picsum.photos/seed/dino/300/200",
-    "iframeUrl": "https://chromedino.com/"
+    "id": "fnaf-2",
+    "title": "Five Nights at Freddy's 2",
+    "description": "Welcome back to the new and improved Freddy Fazbear's Pizza! Can you survive five more nights?",
+    "thumbnail": "https://picsum.photos/seed/fnaf2/300/200",
+    "iframeUrl": "https://manscod.github.io/other/fnaf2/"
   }
 ]
