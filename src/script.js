@@ -13,7 +13,6 @@ const fullscreenButton = document.getElementById('fullscreen-button');
 const iframeContainer = document.getElementById('iframe-container');
 const gameIframe = document.getElementById('game-iframe');
 const gameTitle = document.getElementById('game-title');
-const gameDescription = document.getElementById('game-description');
 const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
 
@@ -22,6 +21,7 @@ const mainContainer = document.getElementById('main-container');
 async function init() {
     try {
         const response = await fetch('./src/games.json');
+        if (!response.ok) throw new Error('Failed to fetch games');
         games = await response.json();
         filteredGames = [...games];
         renderGames();
@@ -86,7 +86,7 @@ function openGame(game) {
     document.getElementById('grid-view').classList.add('hidden');
     gamePlay.classList.remove('hidden');
     mainContainer.classList.remove('max-w-7xl');
-    mainContainer.classList.add('max-w-screen-2xl');
+    mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
     window.scrollTo(0, 0);
 }
 
@@ -95,7 +95,7 @@ function closeGame() {
     gameIframe.src = '';
     document.getElementById('grid-view').classList.remove('hidden');
     gamePlay.classList.add('hidden');
-    mainContainer.classList.remove('max-w-screen-2xl');
+    mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
     mainContainer.classList.add('max-w-7xl');
 }
 
@@ -129,4 +129,6 @@ fullscreenButton.addEventListener('click', toggleFullscreen);
 
 // Initialize
 init();
-lucide.createIcons();
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
