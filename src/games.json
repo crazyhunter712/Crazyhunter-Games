@@ -7,17 +7,59 @@
     "iframeUrl": "https://manscod.github.io/other/fnaf2/"
   },
   {
-    "id": "ultrakill",
-    "title": "ULTRAKILL",
-    "description": "Mankind is dead. Blood is fuel. Hell is full. A fast-paced retro FPS.",
-    "thumbnail": "https://picsum.photos/seed/ultrakill/480/270",
-    "iframeUrl": "https://ultrakillgame.com/gg/ultrakill/"
-  },
-  {
     "id": "funny-shooter-bro",
     "title": "Funny Shooter Bro",
     "description": "A hilarious first-person shooter where you face off against waves of wacky enemies. Use a variety of weapons to survive the chaos!",
-    "thumbnail": "https://picsum.photos/seed/funnyshooter/480/270",
+    "thumbnail": "https://www4.minijuegosgratis.com/v3/games/thumbnails/249631_1.jpg",
     "iframeUrl": "https://storage.googleapis.com/freezenova/all/2024/unity/funny-shooter-bro/pre-gg.html"
+  },
+  {
+    "id": "football-strike",
+    "title": "Football Strike",
+    "description": "Experience the thrill of football in this fast-paced multiplayer game! Score goals, take free kicks, and become the ultimate striker.",
+    "thumbnail": "https://i.ytimg.com/vi/y3X1ytNpNaU/maxresdefault.jpg",
+    "iframeUrl": "https://ubg98.github.io/FootballStrike/"
+  },
+  {
+    "id": "stick-merge-2",
+    "title": "Stick Merge 2",
+    "description": "Merge weapons, upgrade your stickman, and take down enemies in this addictive action-puzzle game!",
+    "thumbnail": "https://img.holagames.io/public/site_content/quiz/ck_editor/images/meta/holagames/Holagames_images/S2M_800x420.png",
+    "iframeUrl": "https://ubg98.github.io/StickMerge2/"
+  },
+  {
+    "id": "level-devil",
+    "title": "Level Devil",
+    "description": "A challenging platformer where the levels are out to get you! Can you survive the unexpected traps and reach the end?",
+    "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMlMhuSUYPvTOnrE3oceZzT5_8pBZKls1m-Q&s",
+    "iframeUrl": "https://ubg98.com/mathscore/LevelDevil/?gd_sdk_referrer_url=https://ubg98.com/play/level-devil"
+  },
+  {
+    "id": "soccer-skills-euro-cup",
+    "title": "Soccer Skills Euro Cup",
+    "description": "Show off your soccer skills in this exciting Euro Cup tournament! Dribble, pass, and shoot your way to victory.",
+    "thumbnail": "https://lh3.googleusercontent.com/r-ptnPLiMNLO4dKVgVin89NrtObubCVwuw82baHI4laq7Cobl2fgXup_538qhR1ahqJ9BUclzrFksKARKvLrBduyAQ=s1280-w1280-h800",
+    "iframeUrl": "https://soccerskillseurocuponline.github.io/file/"
+  },
+  {
+    "id": "lethal-sniper-3d",
+    "title": "Lethal Sniper 3D: Army Soldier",
+    "description": "Become an elite sniper and take down targets in this intense 3D shooter. Complete missions and upgrade your arsenal.",
+    "thumbnail": "https://cdn.aptoide.com/imgs/a/f/7/af7e9f2fae4ddb3d724ee4093a204448_fgraphic.png",
+    "iframeUrl": "https://ubg98.com/mathscore/0new/lethal-sniper-3d-army-soldier?gd_sdk_referrer_url=https://ubg98.com/play/lethal-sniper-3d-army-soldier"
+  },
+  {
+    "id": "snowball-io",
+    "title": "Snowball.io",
+    "description": "Roll the biggest snowball, bump your opponents, and be the last one on the platform in this fun multiplayer game!",
+    "thumbnail": "https://picsum.photos/seed/snowball/480/270",
+    "iframeUrl": "https://stenblocked.github.io/snowball-io/"
+  },
+  {
+    "id": "gd-online",
+    "title": "Geometry Dash Online",
+    "description": "Jump and fly your way through danger in this rhythm-based action platformer! Play the full Geometry Dash experience online.",
+    "thumbnail": "https://picsum.photos/seed/gdonline/480/270",
+    "iframeUrl": "https://geometrydashonline.github.io/"
   }
 ]
