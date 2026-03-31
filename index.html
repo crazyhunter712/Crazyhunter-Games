@@ -34,6 +34,13 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+            animation: shimmer 2s infinite;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-[#0a0a0a] text-white selection:bg-primary/30">
@@ -137,6 +144,9 @@
                     <h2 id="game-title" class="text-2xl font-bold tracking-tight">Game Title</h2>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="open-new-tab" class="p-3 bg-white/5 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-lg group" title="Open in New Tab">
+                        <i data-lucide="external-link" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                    </button>
                     <button id="fullscreen-button" class="p-3 bg-white/5 hover:bg-primary hover:text-black rounded-xl transition-all shadow-lg group" title="Toggle Fullscreen">
                         <i data-lucide="maximize-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                     </button>
@@ -147,6 +157,35 @@
             </div>
 
             <div id="iframe-container" class="w-full aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative group ring-1 ring-white/5">
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="absolute inset-0 z-10 bg-[#0a0a0a] flex flex-col items-center justify-center gap-8 transition-all duration-700 opacity-0 invisible">
+                    <div class="relative">
+                        <!-- Outer Ring -->
+                        <div class="w-24 h-24 border-4 border-white/5 rounded-full"></div>
+                        <!-- Spinning Ring -->
+                        <div class="w-24 h-24 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full absolute top-0 left-0 animate-spin"></div>
+                        <!-- Inner Icon -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i data-lucide="gamepad-2" class="w-8 h-8 text-primary/40 animate-pulse"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="flex flex-col items-center">
+                            <h3 class="text-2xl font-black tracking-[0.2em] uppercase italic">
+                                Loading<span class="text-primary animate-pulse">...</span>
+                            </h3>
+                            <p class="text-white/20 text-xs font-bold uppercase tracking-widest mt-1">Preparing your experience</p>
+                        </div>
+                        
+                        <!-- Progress Bar Container -->
+                        <div class="w-64 h-1 bg-white/5 rounded-full overflow-hidden relative">
+                            <div id="loading-progress" class="absolute inset-0 bg-primary/20 animate-shimmer"></div>
+                            <div id="loading-bar" class="h-full bg-primary w-0 transition-all duration-500 shadow-[0_0_15px_var(--primary-color)]"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <iframe id="game-iframe" src="" class="w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-popups allow-forms allow-same-origin allow-popups-to-escape-sandbox allow-downloads allow-storage-access-by-user-activation"></iframe>
             </div>
 

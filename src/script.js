@@ -26,6 +26,8 @@ const closeButton = document.getElementById('close-button');
 const fullscreenButton = document.getElementById('fullscreen-button');
 const iframeContainer = document.getElementById('iframe-container');
 const gameIframe = document.getElementById('game-iframe');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingBar = document.getElementById('loading-bar');
 const gameTitle = document.getElementById('game-title');
 const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
@@ -49,6 +51,16 @@ async function init() {
         filteredGames = [...games];
         renderGames();
         renderFavorites();
+
+        // Check for shared game in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedGameId = urlParams.get('game');
+        if (sharedGameId) {
+            const sharedGame = games.find(g => g.id === sharedGameId);
+            if (sharedGame) {
+                setTimeout(() => openGame(sharedGame), 500);
+            }
+        }
     } catch (error) {
         console.error('Error loading games:', error);
     }
@@ -108,6 +120,13 @@ function renderGames() {
                 >
                     <i data-lucide="heart" class="w-4 h-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white/40 group-hover/heart:text-red-500'}"></i>
                 </button>
+                <button 
+                    onclick="event.stopPropagation(); shareGame('${game.id}')"
+                    class="absolute top-2 right-12 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/share"
+                    title="Share Game"
+                >
+                    <i data-lucide="share-2" class="w-4 h-4 text-white/40 group-hover/share:text-primary"></i>
+                </button>
             </div>
             <div class="p-4">
                 <h3 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors">${game.title}</h3>
@@ -164,6 +183,13 @@ function renderFavorites() {
                 >
                     <i data-lucide="heart" class="w-4 h-4 text-red-500 fill-red-500"></i>
                 </button>
+                <button 
+                    onclick="event.stopPropagation(); shareGame('${game.id}')"
+                    class="absolute top-2 right-12 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/share"
+                    title="Share Game"
+                >
+                    <i data-lucide="share-2" class="w-4 h-4 text-white/40 group-hover/share:text-primary"></i>
+                </button>
             </div>
             <div class="p-4">
                 <h3 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors">${game.title}</h3>
@@ -188,9 +214,71 @@ window.toggleFavorite = function(gameId) {
     renderFavorites();
 };
 
+window.shareGame = async function(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}?game=${gameId}`;
+    const shareData = {
+        title: `Play ${game.title} on Crazy Hunter Hub!`,
+        text: `Check out ${game.title} - ${game.description}`,
+        url: shareUrl
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Share cancelled or failed:', err);
+        }
+    } else {
+        // Fallback: Copy to clipboard
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            alert(`Link copied to clipboard: ${shareUrl}`);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            alert(`Share this link: ${shareUrl}`);
+        }
+    }
+};
+
 function openGame(game) {
     selectedGame = game;
+    
+    // Show loading overlay
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('opacity-0', 'invisible');
+        loadingOverlay.classList.add('opacity-100', 'visible');
+        if (loadingBar) loadingBar.style.width = '0%';
+    }
+
+    // Simulate initial progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        if (progress < 90) {
+            progress += Math.random() * 15;
+            if (loadingBar) loadingBar.style.width = `${Math.min(progress, 90)}%`;
+        } else {
+            clearInterval(interval);
+        }
+    }, 200);
+
     gameIframe.src = game.iframeUrl;
+    
+    // Handle iframe load
+    gameIframe.onload = () => {
+        clearInterval(interval);
+        if (loadingBar) loadingBar.style.width = '100%';
+        
+        setTimeout(() => {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('opacity-0', 'invisible');
+                loadingOverlay.classList.remove('opacity-100', 'visible');
+            }
+        }, 500);
+    };
+
     gameTitle.textContent = game.title;
     aboutTitle.textContent = `About ${game.title}`;
     aboutDescription.textContent = game.description;
@@ -289,6 +377,14 @@ window.rateGame = function(gameId, rating) {
 function closeGame() {
     selectedGame = null;
     gameIframe.src = '';
+    
+    // Reset loading state
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('opacity-0', 'invisible');
+        loadingOverlay.classList.remove('opacity-100', 'visible');
+    }
+    if (loadingBar) loadingBar.style.width = '0%';
+
     document.getElementById('grid-view').classList.remove('hidden');
     gamePlay.classList.add('hidden');
     mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
@@ -372,6 +468,15 @@ searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
 closeButton.addEventListener('click', closeGame);
 fullscreenButton.addEventListener('click', toggleFullscreen);
+
+const openNewTabBtn = document.getElementById('open-new-tab');
+if (openNewTabBtn) {
+    openNewTabBtn.addEventListener('click', () => {
+        if (selectedGame && selectedGame.iframeUrl) {
+            window.open(selectedGame.iframeUrl, '_blank');
+        }
+    });
+}
 
 // Theme Logic
 window.setTheme = function(themeName) {
