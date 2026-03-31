@@ -14,10 +14,10 @@
     "iframeUrl": "https://ultrakillgame.com/gg/ultrakill/"
   },
   {
-    "id": "monkey-island",
-    "title": "The Secret of Monkey Island",
-    "description": "A classic point-and-click adventure game. Follow Guybrush Threepwood's quest to become a pirate.",
-    "thumbnail": "https://archive.org/services/img/msdos_Secret_of_Monkey_Island_The_1990",
-    "iframeUrl": "https://archive.org/embed/msdos_Secret_of_Monkey_Island_The_1990"
+    "id": "funny-shooter-bro",
+    "title": "Funny Shooter Bro",
+    "description": "A hilarious first-person shooter where you face off against waves of wacky enemies. Use a variety of weapons to survive the chaos!",
+    "thumbnail": "https://picsum.photos/seed/funnyshooter/480/270",
+    "iframeUrl": "https://storage.googleapis.com/freezenova/all/2024/unity/funny-shooter-bro/pre-gg.html"
   }
 ]
