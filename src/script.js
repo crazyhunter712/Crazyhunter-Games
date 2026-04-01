@@ -1,5 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
@@ -52,14 +50,6 @@ const commentForm = document.getElementById('comment-form');
 const commentCount = document.getElementById('comment-count');
 const commentStars = document.getElementById('comment-stars');
 const commentRatingVal = document.getElementById('comment-rating-val');
-
-// AI Assistant Elements
-const aiToggle = document.getElementById('ai-toggle');
-const aiClose = document.getElementById('ai-close');
-const aiChatWindow = document.getElementById('ai-chat-window');
-const aiMessages = document.getElementById('ai-messages');
-const aiForm = document.getElementById('ai-form');
-const aiInput = document.getElementById('ai-input');
 
 const mainContainer = document.getElementById('main-container');
 
@@ -740,124 +730,6 @@ saveScoreBtn.addEventListener('click', () => {
 });
 
 commentForm.addEventListener('submit', postComment);
-
-// AI Assistant Logic
-let aiSession = null;
-
-async function initAI() {
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const model = "gemini-3-flash-preview";
-        
-        const systemInstruction = `
-            You are "Hunter AI", the official gaming assistant for Crazy Hunter Hub.
-            Your goal is to help users find games, explain how to play them, and provide fun facts.
-            
-            Here is the list of games currently available on the site:
-            ${JSON.stringify(games.map(g => ({ title: g.title, category: g.category, description: g.description, plays: g.plays, rating: g.baseRating })), null, 2)}
-            
-            Guidelines:
-            - Be friendly, enthusiastic, and helpful.
-            - Use emojis related to gaming 🎮 🕹️ 🚀.
-            - If a user asks for a recommendation, suggest games based on their interests or the categories available.
-            - Keep responses relatively concise but informative.
-            - If a user asks about a game NOT in the list, politely inform them it's not available yet but they can use the "Request Game" button.
-            - You can also help with site navigation (e.g., "Where are my favorites?" -> "They're in the My Favorites section at the top!").
-        `;
-
-        aiSession = ai.chats.create({
-            model: model,
-            config: {
-                systemInstruction: systemInstruction,
-            },
-        });
-    } catch (error) {
-        console.error('Failed to initialize Hunter AI:', error);
-    }
-}
-
-function addAIMessage(text, isUser = false) {
-    const messageEl = document.createElement('div');
-    messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
-    
-    const icon = isUser ? 'user' : 'bot';
-    const bgColor = isUser ? 'bg-primary text-black' : 'bg-white/5 border border-white/10 text-white/80';
-    const rounded = isUser ? 'rounded-tr-none' : 'rounded-tl-none';
-
-    messageEl.innerHTML = `
-        <div class="w-8 h-8 ${isUser ? 'bg-primary' : 'bg-primary/20'} rounded-lg flex items-center justify-center ${isUser ? 'text-black' : 'text-primary'} shrink-0">
-            <i data-lucide="${icon}" class="w-4 h-4"></i>
-        </div>
-        <div class="${bgColor} rounded-2xl ${rounded} p-3 text-sm max-w-[85%] whitespace-pre-wrap">
-            ${text}
-        </div>
-    `;
-    
-    aiMessages.appendChild(messageEl);
-    aiMessages.scrollTo({ top: aiMessages.scrollHeight, behavior: 'smooth' });
-    lucide.createIcons();
-}
-
-async function handleAIChat(e) {
-    e.preventDefault();
-    const prompt = aiInput.value.trim();
-    if (!prompt) return;
-
-    if (!aiSession) {
-        await initAI();
-    }
-
-    // Add user message
-    addAIMessage(prompt, true);
-    aiInput.value = '';
-    aiInput.disabled = true;
-
-    // Add thinking indicator
-    const thinkingEl = document.createElement('div');
-    thinkingEl.id = 'ai-thinking';
-    thinkingEl.className = 'flex items-start gap-3';
-    thinkingEl.innerHTML = `
-        <div class="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary shrink-0">
-            <i data-lucide="bot" class="w-4 h-4"></i>
-        </div>
-        <div class="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-3 text-sm text-white/40 italic">
-            Hunter AI is thinking...
-        </div>
-    `;
-    aiMessages.appendChild(thinkingEl);
-    aiMessages.scrollTo({ top: aiMessages.scrollHeight, behavior: 'smooth' });
-    lucide.createIcons();
-
-    try {
-        const response = await aiSession.sendMessage({ message: prompt });
-        thinkingEl.remove();
-        addAIMessage(response.text);
-    } catch (error) {
-        console.error('AI Error:', error);
-        thinkingEl.remove();
-        addAIMessage("Oops! I hit a glitch in the matrix. 😵 Can you try asking that again?");
-    } finally {
-        aiInput.disabled = false;
-        aiInput.focus();
-    }
-}
-
-aiToggle.addEventListener('click', () => {
-    const isVisible = !aiChatWindow.classList.contains('invisible');
-    if (isVisible) {
-        aiChatWindow.classList.add('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
-    } else {
-        aiChatWindow.classList.remove('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
-        aiInput.focus();
-        if (!aiSession) initAI();
-    }
-});
-
-aiClose.addEventListener('click', () => {
-    aiChatWindow.classList.add('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
-});
-
-aiForm.addEventListener('submit', handleAIChat);
 
 searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
