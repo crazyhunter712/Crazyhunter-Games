@@ -5,13 +5,8 @@ let searchQuery = '';
 let isFullscreen = false;
 let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
 let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
-let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
-
 // Playtime Tracking
-let totalPlaytime = parseInt(localStorage.getItem('crazyhunter_playtime') || '0'); // in seconds
-let sessionStartTime = null;
-let gamesPlayed = JSON.parse(localStorage.getItem('crazyhunter_played_games') || '[]');
-let currentUsername = localStorage.getItem('crazyhunter_username') || null;
+let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
@@ -53,59 +48,26 @@ const commentsList = document.getElementById('comments-list');
 const commentForm = document.getElementById('comment-form');
 const commentsCount = document.getElementById('comments-count');
 
-// Profile Elements
-const profileBtn = document.getElementById('profile-btn');
-const profileModal = document.getElementById('profile-modal');
-const closeProfileModal = document.getElementById('close-profile-modal');
-const totalPlaytimeDisplay = document.getElementById('total-playtime');
-const profileGamesPlayed = document.getElementById('profile-games-played');
-const profileReviewsLeft = document.getElementById('profile-reviews-left');
-const usernameInput = document.getElementById('username-input');
-const syncBtn = document.getElementById('sync-btn');
-const profileUsernameDisplay = document.getElementById('profile-username-display');
-const logoutBtn = document.getElementById('logout-btn');
-const clearDataBtn = document.getElementById('clear-data-btn');
-
-// Helper for Lucide icons
-function safeCreateIcons() {
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        try {
-            lucide.createIcons();
-        } catch (e) {
-            console.error('Lucide error:', e);
-        }
-    }
-}
-
 async function init() {
-    try {
-        applyTheme(currentTheme);
-        
-        // Initial sync if username exists
-        if (currentUsername && currentUsername !== 'null') {
-            await syncProfile(currentUsername);
-        }
+    applyTheme(currentTheme);
+    
+    const response = await fetch('./src/games.json');
+    if (!response.ok) throw new Error('Failed to fetch games');
+    games = await response.json();
+    filteredGames = [...games];
+    renderGames();
+    renderFavorites();
 
-        const response = await fetch('/src/games.json');
-        if (!response.ok) throw new Error('Failed to fetch games');
-        games = await response.json();
-        filteredGames = [...games];
-        renderGames();
-        renderFavorites();
-
-        // Check for shared game in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedGameId = urlParams.get('game');
-        if (sharedGameId) {
-            const sharedGame = games.find(g => g.id === sharedGameId);
-            if (sharedGame) {
-                setTimeout(() => openGame(sharedGame), 500);
-            }
+    // Check for shared game in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedGameId = urlParams.get('game');
+    if (sharedGameId) {
+        const sharedGame = games.find(g => g.id === sharedGameId);
+        if (sharedGame) {
+            setTimeout(() => openGame(sharedGame), 500);
         }
-    } catch (error) {
-        console.error('Initialization error:', error);
     }
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function getAverageRating(game) {
@@ -184,7 +146,7 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderFavorites() {
@@ -242,7 +204,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 window.toggleFavorite = function(gameId) {
@@ -308,13 +270,6 @@ function openGame(game) {
 
     gameIframe.src = game.iframeUrl;
     
-    // Start playtime tracking
-    sessionStartTime = Date.now();
-    if (!gamesPlayed.includes(game.id)) {
-        gamesPlayed.push(game.id);
-        localStorage.setItem('crazyhunter_played_games', JSON.stringify(gamesPlayed));
-    }
-
     // Handle iframe load
     gameIframe.onload = () => {
         clearInterval(interval);
@@ -414,7 +369,7 @@ function openGame(game) {
     // Load comments
     loadComments(game.id);
 
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 async function loadComments(gameId) {
@@ -463,7 +418,7 @@ function renderComments(comments) {
         </div>
     `).join('');
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 window.rateGame = async function(gameId, rating) {
@@ -477,14 +432,6 @@ window.rateGame = async function(gameId, rating) {
 };
 
 function closeGame() {
-    // Save playtime
-    if (sessionStartTime) {
-        const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
-        totalPlaytime += sessionDuration;
-        localStorage.setItem('crazyhunter_playtime', totalPlaytime.toString());
-        sessionStartTime = null;
-    }
-
     selectedGame = null;
     gameIframe.src = '';
     
@@ -533,7 +480,7 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 // Modal Logic
@@ -542,7 +489,7 @@ if (requestGameBtn) {
         requestModal.classList.remove('hidden');
         requestForm.classList.remove('hidden');
         requestSuccess.classList.add('hidden');
-        safeCreateIcons();
+        lucide.createIcons();
     });
 }
 
@@ -571,7 +518,7 @@ if (requestForm) {
         
         requestForm.classList.add('hidden');
         requestSuccess.classList.remove('hidden');
-        safeCreateIcons();
+        lucide.createIcons();
     });
 }
 
@@ -580,7 +527,7 @@ if (resetRequest) {
         requestForm.reset();
         requestForm.classList.remove('hidden');
         requestSuccess.classList.add('hidden');
-        safeCreateIcons();
+        lucide.createIcons();
     });
 }
 
@@ -653,158 +600,5 @@ function applyTheme(themeName) {
     renderFavorites();
 }
 
-// Profile Logic
-function formatPlaytime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-}
-
-function updateProfileStats() {
-    try {
-        // Calculate current session if active
-        let currentTotal = totalPlaytime;
-        if (sessionStartTime) {
-            currentTotal += Math.floor((Date.now() - sessionStartTime) / 1000);
-        }
-        
-        if (totalPlaytimeDisplay) totalPlaytimeDisplay.textContent = formatPlaytime(currentTotal);
-        if (profileGamesPlayed) profileGamesPlayed.textContent = (gamesPlayed || []).length;
-        if (profileUsernameDisplay) profileUsernameDisplay.textContent = currentUsername || 'Guest Hunter';
-        if (usernameInput) usernameInput.value = currentUsername || '';
-        
-        // Count user reviews
-        const reviewCount = Object.keys(userRatings || {}).length;
-        if (profileReviewsLeft) profileReviewsLeft.textContent = reviewCount;
-    } catch (e) {
-        console.error('Error updating profile stats:', e);
-    }
-}
-
-async function syncProfile(username) {
-    if (!username) return;
-    
-    try {
-        // 1. Fetch current profile from server
-        const response = await fetch(`/api/profile/${username}`);
-        if (!response.ok) throw new Error('Failed to fetch profile');
-        const serverProfile = await response.json();
-
-        // 2. Merge logic: For now, we'll take the larger playtime and merge arrays
-        // In a real app, you'd have more complex conflict resolution
-        totalPlaytime = Math.max(totalPlaytime, serverProfile.playtime || 0);
-        favorites = Array.from(new Set([...favorites, ...(serverProfile.favorites || [])]));
-        gamesPlayed = Array.from(new Set([...gamesPlayed, ...(serverProfile.playedGames || [])]));
-        userRatings = { ...serverProfile.ratings, ...userRatings };
-
-        // 3. Save merged data back to server
-        await fetch(`/api/profile/${username}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                playtime: totalPlaytime,
-                favorites,
-                playedGames: gamesPlayed,
-                ratings: userRatings
-            })
-        });
-
-        // 4. Update local storage
-        currentUsername = username;
-        localStorage.setItem('crazyhunter_username', username);
-        localStorage.setItem('crazyhunter_playtime', totalPlaytime.toString());
-        localStorage.setItem('crazyhunter_favorites', JSON.stringify(favorites));
-        localStorage.setItem('crazyhunter_played_games', JSON.stringify(gamesPlayed));
-        localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
-
-        updateProfileStats();
-        renderGames();
-        renderFavorites();
-    } catch (error) {
-        console.error('Sync error:', error);
-    }
-}
-
-if (syncBtn) {
-    syncBtn.addEventListener('click', async () => {
-        const username = usernameInput.value.trim();
-        if (username) {
-            syncBtn.disabled = true;
-            syncBtn.textContent = 'Syncing...';
-            await syncProfile(username);
-            syncBtn.disabled = false;
-            syncBtn.textContent = 'Sync';
-        }
-    });
-}
-
-if (profileBtn) {
-    profileBtn.addEventListener('click', () => {
-        updateProfileStats();
-        if (profileModal) {
-            profileModal.classList.remove('hidden');
-            safeCreateIcons();
-        }
-    });
-}
-
-if (closeProfileModal) {
-    closeProfileModal.addEventListener('click', () => {
-        profileModal.classList.add('hidden');
-    });
-}
-
-if (profileModal) {
-    profileModal.addEventListener('click', (e) => {
-        if (e.target === profileModal) profileModal.classList.add('hidden');
-    });
-}
-
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to logout? This will stop syncing your stats.')) {
-            currentUsername = null;
-            localStorage.removeItem('crazyhunter_username');
-            updateProfileStats();
-            alert('Logged out successfully.');
-        }
-    });
-}
-
-if (clearDataBtn) {
-    clearDataBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear all local data? This will reset your playtime, favorites, and ratings on this device.')) {
-            localStorage.clear();
-            location.reload();
-        }
-    });
-}
-
-// Auto-save playtime periodically if game is open
-setInterval(async () => {
-    if (sessionStartTime && selectedGame) {
-        const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
-        const tempTotal = totalPlaytime + sessionDuration;
-        localStorage.setItem('crazyhunter_playtime', tempTotal.toString());
-        
-        // Also sync to server if logged in
-        if (currentUsername) {
-            try {
-                await fetch(`/api/profile/${currentUsername}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        playtime: tempTotal,
-                        favorites,
-                        playedGames: gamesPlayed,
-                        ratings: userRatings
-                    })
-                });
-            } catch (e) { console.error('Auto-sync failed', e); }
-        }
-    }
-}, 30000); // Every 30 seconds
-
 // Initialize
 init();
-safeCreateIcons();

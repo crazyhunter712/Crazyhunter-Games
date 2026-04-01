@@ -8,14 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const COMMENTS_FILE = path.join(__dirname, "src", "comments.json");
-const PROFILES_FILE = path.join(__dirname, "src", "profiles.json");
 
 // Ensure files exist
 if (!fs.existsSync(COMMENTS_FILE)) {
   fs.writeFileSync(COMMENTS_FILE, JSON.stringify([]));
-}
-if (!fs.existsSync(PROFILES_FILE)) {
-  fs.writeFileSync(PROFILES_FILE, JSON.stringify({}));
 }
 
 async function startServer() {
@@ -25,41 +21,6 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  app.get("/api/profile/:username", (req, res) => {
-    try {
-      const profiles = JSON.parse(fs.readFileSync(PROFILES_FILE, "utf-8"));
-      const profile = profiles[req.params.username] || {
-        playtime: 0,
-        favorites: [],
-        playedGames: [],
-        ratings: {}
-      };
-      res.json(profile);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch profile" });
-    }
-  });
-
-  app.post("/api/profile/:username", (req, res) => {
-    try {
-      const { username } = req.params;
-      const { playtime, favorites, playedGames, ratings } = req.body;
-      
-      const profiles = JSON.parse(fs.readFileSync(PROFILES_FILE, "utf-8"));
-      profiles[username] = {
-        playtime: playtime || 0,
-        favorites: favorites || [],
-        playedGames: playedGames || [],
-        ratings: ratings || {}
-      };
-
-      fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2));
-      res.json({ status: "ok" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update profile" });
-    }
-  });
-
   app.get("/api/comments/:gameId", (req, res) => {
     try {
       const comments = JSON.parse(fs.readFileSync(COMMENTS_FILE, "utf-8"));
