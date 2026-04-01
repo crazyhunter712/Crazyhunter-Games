@@ -63,17 +63,30 @@ const profileReviewsLeft = document.getElementById('profile-reviews-left');
 const usernameInput = document.getElementById('username-input');
 const syncBtn = document.getElementById('sync-btn');
 const profileUsernameDisplay = document.getElementById('profile-username-display');
+const logoutBtn = document.getElementById('logout-btn');
+const clearDataBtn = document.getElementById('clear-data-btn');
+
+// Helper for Lucide icons
+function safeCreateIcons() {
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        try {
+            lucide.createIcons();
+        } catch (e) {
+            console.error('Lucide error:', e);
+        }
+    }
+}
 
 async function init() {
-    applyTheme(currentTheme);
-    
-    // Initial sync if username exists
-    if (currentUsername) {
-        await syncProfile(currentUsername);
-    }
-
     try {
-        const response = await fetch('./src/games.json');
+        applyTheme(currentTheme);
+        
+        // Initial sync if username exists
+        if (currentUsername && currentUsername !== 'null') {
+            await syncProfile(currentUsername);
+        }
+
+        const response = await fetch('/src/games.json');
         if (!response.ok) throw new Error('Failed to fetch games');
         games = await response.json();
         filteredGames = [...games];
@@ -90,8 +103,9 @@ async function init() {
             }
         }
     } catch (error) {
-        console.error('Error loading games:', error);
+        console.error('Initialization error:', error);
     }
+    safeCreateIcons();
 }
 
 function getAverageRating(game) {
@@ -170,7 +184,7 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderFavorites() {
@@ -228,7 +242,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 window.toggleFavorite = function(gameId) {
@@ -400,7 +414,7 @@ function openGame(game) {
     // Load comments
     loadComments(game.id);
 
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 async function loadComments(gameId) {
@@ -449,7 +463,7 @@ function renderComments(comments) {
         </div>
     `).join('');
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 window.rateGame = async function(gameId, rating) {
@@ -519,46 +533,56 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 // Modal Logic
-requestGameBtn.addEventListener('click', () => {
-    requestModal.classList.remove('hidden');
-    requestForm.classList.remove('hidden');
-    requestSuccess.classList.add('hidden');
-    lucide.createIcons();
-});
+if (requestGameBtn) {
+    requestGameBtn.addEventListener('click', () => {
+        requestModal.classList.remove('hidden');
+        requestForm.classList.remove('hidden');
+        requestSuccess.classList.add('hidden');
+        safeCreateIcons();
+    });
+}
 
-closeRequestModal.addEventListener('click', () => {
-    requestModal.classList.add('hidden');
-});
+if (closeRequestModal) {
+    closeRequestModal.addEventListener('click', () => {
+        requestModal.classList.add('hidden');
+    });
+}
 
-requestModal.addEventListener('click', (e) => {
-    if (e.target === requestModal) requestModal.classList.add('hidden');
-});
+if (requestModal) {
+    requestModal.addEventListener('click', (e) => {
+        if (e.target === requestModal) requestModal.classList.add('hidden');
+    });
+}
 
-requestForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('req-title').value;
-    const url = document.getElementById('req-url').value;
-    
-    // Save to local storage (simulating "working")
-    const requests = JSON.parse(localStorage.getItem('crazyhunter_requests') || '[]');
-    requests.push({ title, url, date: new Date().toISOString() });
-    localStorage.setItem('crazyhunter_requests', JSON.stringify(requests));
-    
-    requestForm.classList.add('hidden');
-    requestSuccess.classList.remove('hidden');
-    lucide.createIcons();
-});
+if (requestForm) {
+    requestForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('req-title').value;
+        const url = document.getElementById('req-url').value;
+        
+        // Save to local storage (simulating "working")
+        const requests = JSON.parse(localStorage.getItem('crazyhunter_requests') || '[]');
+        requests.push({ title, url, date: new Date().toISOString() });
+        localStorage.setItem('crazyhunter_requests', JSON.stringify(requests));
+        
+        requestForm.classList.add('hidden');
+        requestSuccess.classList.remove('hidden');
+        safeCreateIcons();
+    });
+}
 
-resetRequest.addEventListener('click', () => {
-    requestForm.reset();
-    requestForm.classList.remove('hidden');
-    requestSuccess.classList.add('hidden');
-    lucide.createIcons();
-});
+if (resetRequest) {
+    resetRequest.addEventListener('click', () => {
+        requestForm.reset();
+        requestForm.classList.remove('hidden');
+        requestSuccess.classList.add('hidden');
+        safeCreateIcons();
+    });
+}
 
 searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
@@ -637,20 +661,24 @@ function formatPlaytime(seconds) {
 }
 
 function updateProfileStats() {
-    // Calculate current session if active
-    let currentTotal = totalPlaytime;
-    if (sessionStartTime) {
-        currentTotal += Math.floor((Date.now() - sessionStartTime) / 1000);
+    try {
+        // Calculate current session if active
+        let currentTotal = totalPlaytime;
+        if (sessionStartTime) {
+            currentTotal += Math.floor((Date.now() - sessionStartTime) / 1000);
+        }
+        
+        if (totalPlaytimeDisplay) totalPlaytimeDisplay.textContent = formatPlaytime(currentTotal);
+        if (profileGamesPlayed) profileGamesPlayed.textContent = (gamesPlayed || []).length;
+        if (profileUsernameDisplay) profileUsernameDisplay.textContent = currentUsername || 'Guest Hunter';
+        if (usernameInput) usernameInput.value = currentUsername || '';
+        
+        // Count user reviews
+        const reviewCount = Object.keys(userRatings || {}).length;
+        if (profileReviewsLeft) profileReviewsLeft.textContent = reviewCount;
+    } catch (e) {
+        console.error('Error updating profile stats:', e);
     }
-    
-    totalPlaytimeDisplay.textContent = formatPlaytime(currentTotal);
-    profileGamesPlayed.textContent = gamesPlayed.length;
-    profileUsernameDisplay.textContent = currentUsername || 'Guest Hunter';
-    if (usernameInput) usernameInput.value = currentUsername || '';
-    
-    // Count user reviews (from local userRatings as a proxy or just count them)
-    const reviewCount = Object.keys(userRatings).length;
-    profileReviewsLeft.textContent = reviewCount;
 }
 
 async function syncProfile(username) {
@@ -697,30 +725,60 @@ async function syncProfile(username) {
     }
 }
 
-syncBtn.addEventListener('click', async () => {
-    const username = usernameInput.value.trim();
-    if (username) {
-        syncBtn.disabled = true;
-        syncBtn.textContent = 'Syncing...';
-        await syncProfile(username);
-        syncBtn.disabled = false;
-        syncBtn.textContent = 'Sync';
-    }
-});
+if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+        const username = usernameInput.value.trim();
+        if (username) {
+            syncBtn.disabled = true;
+            syncBtn.textContent = 'Syncing...';
+            await syncProfile(username);
+            syncBtn.disabled = false;
+            syncBtn.textContent = 'Sync';
+        }
+    });
+}
 
-profileBtn.addEventListener('click', () => {
-    updateProfileStats();
-    profileModal.classList.remove('hidden');
-    lucide.createIcons();
-});
+if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+        updateProfileStats();
+        if (profileModal) {
+            profileModal.classList.remove('hidden');
+            safeCreateIcons();
+        }
+    });
+}
 
-closeProfileModal.addEventListener('click', () => {
-    profileModal.classList.add('hidden');
-});
+if (closeProfileModal) {
+    closeProfileModal.addEventListener('click', () => {
+        profileModal.classList.add('hidden');
+    });
+}
 
-profileModal.addEventListener('click', (e) => {
-    if (e.target === profileModal) profileModal.classList.add('hidden');
-});
+if (profileModal) {
+    profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) profileModal.classList.add('hidden');
+    });
+}
+
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to logout? This will stop syncing your stats.')) {
+            currentUsername = null;
+            localStorage.removeItem('crazyhunter_username');
+            updateProfileStats();
+            alert('Logged out successfully.');
+        }
+    });
+}
+
+if (clearDataBtn) {
+    clearDataBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all local data? This will reset your playtime, favorites, and ratings on this device.')) {
+            localStorage.clear();
+            location.reload();
+        }
+    });
+}
 
 // Auto-save playtime periodically if game is open
 setInterval(async () => {
@@ -749,6 +807,4 @@ setInterval(async () => {
 
 // Initialize
 init();
-if (typeof lucide !== 'undefined') {
-    lucide.createIcons();
-}
+safeCreateIcons();
