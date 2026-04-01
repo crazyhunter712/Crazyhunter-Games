@@ -1,5 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
+// Global Functions for HTML onclick
+window.setTheme = (themeName) => setTheme(themeName);
+window.setCategory = (cat) => setCategory(cat);
+window.setSort = (sortType) => setSort(sortType);
+window.toggleFavorite = (gameId) => toggleFavorite(gameId);
+window.shareGame = (gameId) => shareGame(gameId);
+window.rateGame = (gameId, rating) => rateGame(gameId, rating);
+window.openGameFromChat = (gameId) => openGameFromChat(gameId);
+
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
@@ -71,6 +80,12 @@ const requestForm = document.getElementById('request-form');
 const requestSuccess = document.getElementById('request-success');
 const resetRequest = document.getElementById('reset-request');
 const randomGameBtn = document.getElementById('random-game-btn');
+
+function safeCreateIcons() {
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
+}
 
 async function init() {
     applyTheme(currentTheme);
@@ -147,7 +162,7 @@ function renderGames() {
                 <p class="text-white/40">Try searching for something else.</p>
             </div>
         `;
-        lucide.createIcons();
+        safeCreateIcons();
         return;
     }
 
@@ -156,7 +171,7 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderFavorites() {
@@ -177,7 +192,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderRecent() {
@@ -199,7 +214,7 @@ function renderRecent() {
         }
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderCategories() {
@@ -238,13 +253,13 @@ function renderGameOfTheDay() {
     }
 }
 
-window.setCategory = function(cat) {
+function setCategory(cat) {
     currentCategory = cat;
     renderCategories();
     renderGames();
-};
+}
 
-window.setSort = function(sortType) {
+function setSort(sortType) {
     currentSort = sortType;
     const labels = {
         default: 'Sort: Default',
@@ -315,7 +330,7 @@ function createGameCard(game, isFavoriteList = false) {
     return card;
 }
 
-window.toggleFavorite = function(gameId) {
+function toggleFavorite(gameId) {
     if (favorites.includes(gameId)) {
         favorites = favorites.filter(id => id !== gameId);
     } else {
@@ -324,9 +339,9 @@ window.toggleFavorite = function(gameId) {
     localStorage.setItem('crazyhunter_favorites', JSON.stringify(favorites));
     renderGames();
     renderFavorites();
-};
+}
 
-window.shareGame = async function(gameId) {
+async function shareGame(gameId) {
     const game = games.find(g => g.id === gameId);
     if (!game) return;
 
@@ -494,10 +509,10 @@ function openGame(game) {
     mainContainer.classList.remove('max-w-7xl');
     mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
-window.rateGame = function(gameId, rating) {
+function rateGame(gameId, rating) {
     userRatings[gameId] = rating;
     localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
     
@@ -505,7 +520,7 @@ window.rateGame = function(gameId, rating) {
     if (game) {
         openGame(game); // Refresh play view
     }
-};
+}
 
 function closeGame() {
     selectedGame = null;
@@ -556,7 +571,7 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 // Comment System Functions
@@ -583,7 +598,7 @@ function renderComments(comments) {
                 <p class="text-white/40">No comments yet. Be the first to share your thoughts!</p>
             </div>
         `;
-        lucide.createIcons();
+        safeCreateIcons();
         return;
     }
 
@@ -622,7 +637,7 @@ function renderComments(comments) {
         commentsList.appendChild(commentEl);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderCommentStars(rating) {
@@ -637,7 +652,7 @@ function renderCommentStars(rating) {
         star.innerHTML = `<i data-lucide="star" class="w-6 h-6 ${i <= rating ? 'fill-current' : ''}"></i>`;
         commentStars.appendChild(star);
     }
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 async function postComment(e) {
@@ -652,7 +667,7 @@ async function postComment(e) {
     const originalContent = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Posting...</span>';
-    lucide.createIcons();
+    safeCreateIcons();
 
     try {
         const response = await fetch('/api/comments', {
@@ -676,7 +691,7 @@ async function postComment(e) {
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
-        lucide.createIcons();
+        safeCreateIcons();
     }
 }
 
@@ -749,16 +764,16 @@ function appendMessage(role, text) {
     `;
     chatMessages.appendChild(msgDiv);
     chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
-window.openGameFromChat = function(gameId) {
+function openGameFromChat(gameId) {
     const game = games.find(g => g.id === gameId);
     if (game) {
         openGame(game);
         toggleChat();
     }
-};
+}
 
 async function handleChatSubmit(e) {
     e.preventDefault();
@@ -783,7 +798,7 @@ async function handleChatSubmit(e) {
     `;
     chatMessages.appendChild(thinkingDiv);
     chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    lucide.createIcons();
+    safeCreateIcons();
 
     try {
         const result = await chatSession.sendMessage({ message });
@@ -809,7 +824,7 @@ requestGameBtn.addEventListener('click', () => {
     requestModal.classList.remove('hidden');
     requestForm.classList.remove('hidden');
     requestSuccess.classList.add('hidden');
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 closeRequestModal.addEventListener('click', () => {
@@ -832,14 +847,14 @@ requestForm.addEventListener('submit', (e) => {
     
     requestForm.classList.add('hidden');
     requestSuccess.classList.remove('hidden');
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 resetRequest.addEventListener('click', () => {
     requestForm.reset();
     requestForm.classList.remove('hidden');
     requestSuccess.classList.add('hidden');
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 randomGameBtn.addEventListener('click', () => {
@@ -880,11 +895,11 @@ if (openNewTabBtn) {
 }
 
 // Theme Logic
-window.setTheme = function(themeName) {
+function setTheme(themeName) {
     currentTheme = themeName;
     localStorage.setItem('crazyhunter_theme', themeName);
     applyTheme(themeName);
-};
+}
 
 function applyTheme(themeName) {
     const theme = themes[themeName];
@@ -900,6 +915,4 @@ function applyTheme(themeName) {
 
 // Initialize
 init();
-if (typeof lucide !== 'undefined') {
-    lucide.createIcons();
-}
+safeCreateIcons();

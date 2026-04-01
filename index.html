@@ -510,6 +510,10 @@
         </button>
     </div>
 
+    <script>
+        // Shim process.env for the browser
+        window.process = window.process || { env: {} };
+    </script>
     <script type="module" src="src/script.js"></script>
 </body>
 </html>

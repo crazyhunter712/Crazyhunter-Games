@@ -29,7 +29,7 @@ async function startServer() {
   app.get("/api/games", (req, res) => {
     console.log('Fetching games from API...');
     try {
-      const gamesPath = path.join(process.cwd(), "public", "games.json");
+      const gamesPath = path.join(process.cwd(), "src", "games.json");
       console.log('Reading games from:', gamesPath);
       if (!fs.existsSync(gamesPath)) {
         console.error('games.json NOT FOUND at:', gamesPath);
