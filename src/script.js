@@ -1,14 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Global Functions for HTML onclick
-window.setTheme = (themeName) => setTheme(themeName);
-window.setCategory = (cat) => setCategory(cat);
-window.setSort = (sortType) => setSort(sortType);
-window.toggleFavorite = (gameId) => toggleFavorite(gameId);
-window.shareGame = (gameId) => shareGame(gameId);
-window.rateGame = (gameId, rating) => rateGame(gameId, rating);
-window.openGameFromChat = (gameId) => openGameFromChat(gameId);
-
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
@@ -62,13 +53,13 @@ const commentCount = document.getElementById('comment-count');
 const commentStars = document.getElementById('comment-stars');
 const commentRatingVal = document.getElementById('comment-rating-val');
 
-// AI Chat Elements
+// AI Assistant Elements
+const aiToggle = document.getElementById('ai-toggle');
+const aiClose = document.getElementById('ai-close');
 const aiChatWindow = document.getElementById('ai-chat-window');
-const toggleChatBtn = document.getElementById('toggle-chat');
-const closeChatBtn = document.getElementById('close-chat');
-const chatForm = document.getElementById('chat-form');
-const chatInput = document.getElementById('chat-input');
-const chatMessages = document.getElementById('chat-messages');
+const aiMessages = document.getElementById('ai-messages');
+const aiForm = document.getElementById('ai-form');
+const aiInput = document.getElementById('ai-input');
 
 const mainContainer = document.getElementById('main-container');
 
@@ -80,12 +71,6 @@ const requestForm = document.getElementById('request-form');
 const requestSuccess = document.getElementById('request-success');
 const resetRequest = document.getElementById('reset-request');
 const randomGameBtn = document.getElementById('random-game-btn');
-
-function safeCreateIcons() {
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-    }
-}
 
 async function init() {
     applyTheme(currentTheme);
@@ -162,7 +147,7 @@ function renderGames() {
                 <p class="text-white/40">Try searching for something else.</p>
             </div>
         `;
-        safeCreateIcons();
+        lucide.createIcons();
         return;
     }
 
@@ -171,7 +156,7 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderFavorites() {
@@ -192,7 +177,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderRecent() {
@@ -214,7 +199,7 @@ function renderRecent() {
         }
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderCategories() {
@@ -253,13 +238,13 @@ function renderGameOfTheDay() {
     }
 }
 
-function setCategory(cat) {
+window.setCategory = function(cat) {
     currentCategory = cat;
     renderCategories();
     renderGames();
-}
+};
 
-function setSort(sortType) {
+window.setSort = function(sortType) {
     currentSort = sortType;
     const labels = {
         default: 'Sort: Default',
@@ -330,7 +315,7 @@ function createGameCard(game, isFavoriteList = false) {
     return card;
 }
 
-function toggleFavorite(gameId) {
+window.toggleFavorite = function(gameId) {
     if (favorites.includes(gameId)) {
         favorites = favorites.filter(id => id !== gameId);
     } else {
@@ -339,9 +324,9 @@ function toggleFavorite(gameId) {
     localStorage.setItem('crazyhunter_favorites', JSON.stringify(favorites));
     renderGames();
     renderFavorites();
-}
+};
 
-async function shareGame(gameId) {
+window.shareGame = async function(gameId) {
     const game = games.find(g => g.id === gameId);
     if (!game) return;
 
@@ -509,10 +494,10 @@ function openGame(game) {
     mainContainer.classList.remove('max-w-7xl');
     mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
-function rateGame(gameId, rating) {
+window.rateGame = function(gameId, rating) {
     userRatings[gameId] = rating;
     localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
     
@@ -520,7 +505,7 @@ function rateGame(gameId, rating) {
     if (game) {
         openGame(game); // Refresh play view
     }
-}
+};
 
 function closeGame() {
     selectedGame = null;
@@ -571,7 +556,7 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 // Comment System Functions
@@ -598,7 +583,7 @@ function renderComments(comments) {
                 <p class="text-white/40">No comments yet. Be the first to share your thoughts!</p>
             </div>
         `;
-        safeCreateIcons();
+        lucide.createIcons();
         return;
     }
 
@@ -637,7 +622,7 @@ function renderComments(comments) {
         commentsList.appendChild(commentEl);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderCommentStars(rating) {
@@ -652,7 +637,7 @@ function renderCommentStars(rating) {
         star.innerHTML = `<i data-lucide="star" class="w-6 h-6 ${i <= rating ? 'fill-current' : ''}"></i>`;
         commentStars.appendChild(star);
     }
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 async function postComment(e) {
@@ -667,7 +652,7 @@ async function postComment(e) {
     const originalContent = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Posting...</span>';
-    safeCreateIcons();
+    lucide.createIcons();
 
     try {
         const response = await fetch('/api/comments', {
@@ -691,140 +676,16 @@ async function postComment(e) {
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
-        safeCreateIcons();
+        lucide.createIcons();
     }
 }
-
-// Hunter AI Logic
-let chatSession = null;
-
-function getSystemInstruction() {
-    const gamesList = games.map(g => `- ${g.title} (${g.category}): ${g.description}`).join('\n');
-    return `You are Hunter AI, the official gaming assistant for Crazy Hunter Hub. 
-    Your goal is to help users find games, explain how to play, and be a friendly gaming expert.
-    
-    Here is the current game library:
-    ${gamesList}
-    
-    Rules:
-    1. Be high-energy, helpful, and use gaming slang occasionally (e.g., "GG", "Level up", "Noob-friendly").
-    2. If a user asks for a recommendation, suggest 1-3 specific games from the list above.
-    3. When you mention a game from the library, ALWAYS wrap its title in double brackets like [[Game Title]] so the system can make it clickable.
-    4. If a user asks about a game NOT in the library, tell them it's not here yet but they can use the "Request Game" button to suggest it.
-    5. Keep responses concise and formatted with markdown for readability.
-    6. Do not mention that you are an AI model or mention Google/Gemini. You are Hunter AI.`;
-}
-
-async function initChat() {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    chatSession = ai.chats.create({
-        model: "gemini-3-flash-preview",
-        config: {
-            systemInstruction: getSystemInstruction(),
-        }
-    });
-}
-
-function toggleChat() {
-    const isHidden = aiChatWindow.classList.contains('hidden');
-    if (isHidden) {
-        aiChatWindow.classList.remove('hidden');
-        setTimeout(() => {
-            aiChatWindow.classList.remove('scale-95', 'opacity-0');
-            aiChatWindow.classList.add('scale-100', 'opacity-100');
-        }, 10);
-        if (!chatSession) initChat();
-    } else {
-        aiChatWindow.classList.add('scale-95', 'opacity-0');
-        aiChatWindow.classList.remove('scale-100', 'opacity-100');
-        setTimeout(() => aiChatWindow.classList.add('hidden'), 300);
-    }
-}
-
-function appendMessage(role, text) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `flex gap-3 ${role === 'user' ? 'flex-row-reverse' : ''}`;
-    
-    // Process [[Game Title]] into clickable links
-    let processedText = text.replace(/\[\[(.*?)\]\]/g, (match, title) => {
-        const game = games.find(g => g.title.toLowerCase() === title.toLowerCase());
-        if (game) {
-            return `<button class="text-primary font-bold hover:underline" onclick="window.openGameFromChat('${game.id}')">${title}</button>`;
-        }
-        return title;
-    });
-
-    msgDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-lg ${role === 'user' ? 'bg-white/10' : 'bg-primary/10'} flex items-center justify-center flex-shrink-0">
-            <i data-lucide="${role === 'user' ? 'user' : 'bot'}" class="w-4 h-4 ${role === 'user' ? 'text-white/60' : 'text-primary'}"></i>
-        </div>
-        <div class="${role === 'user' ? 'bg-primary/20 border-primary/30' : 'bg-white/5 border-white/10'} border rounded-2xl p-4 text-sm text-white/80 leading-relaxed max-w-[80%]">
-            ${processedText}
-        </div>
-    `;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    safeCreateIcons();
-}
-
-function openGameFromChat(gameId) {
-    const game = games.find(g => g.id === gameId);
-    if (game) {
-        openGame(game);
-        toggleChat();
-    }
-}
-
-async function handleChatSubmit(e) {
-    e.preventDefault();
-    const message = chatInput.value.trim();
-    if (!message || !chatSession) return;
-
-    chatInput.value = '';
-    appendMessage('user', message);
-
-    // Add thinking indicator
-    const thinkingDiv = document.createElement('div');
-    thinkingDiv.className = 'flex gap-3 ai-thinking';
-    thinkingDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <i data-lucide="bot" class="w-4 h-4 text-primary"></i>
-        </div>
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-1 items-center">
-            <div class="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce"></div>
-            <div class="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-            <div class="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-        </div>
-    `;
-    chatMessages.appendChild(thinkingDiv);
-    chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
-    safeCreateIcons();
-
-    try {
-        const result = await chatSession.sendMessage({ message });
-        const responseText = result.text;
-        
-        // Remove thinking indicator
-        document.querySelector('.ai-thinking')?.remove();
-        
-        appendMessage('bot', responseText);
-    } catch (error) {
-        console.error('AI Chat Error:', error);
-        document.querySelector('.ai-thinking')?.remove();
-        appendMessage('bot', "Sorry, I'm having a bit of a glitch in the matrix. Can you try again?");
-    }
-}
-
-toggleChatBtn.addEventListener('click', toggleChat);
-closeChatBtn.addEventListener('click', toggleChat);
-chatForm.addEventListener('submit', handleChatSubmit);
 
 // Modal Logic
 requestGameBtn.addEventListener('click', () => {
     requestModal.classList.remove('hidden');
     requestForm.classList.remove('hidden');
     requestSuccess.classList.add('hidden');
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 closeRequestModal.addEventListener('click', () => {
@@ -847,14 +708,14 @@ requestForm.addEventListener('submit', (e) => {
     
     requestForm.classList.add('hidden');
     requestSuccess.classList.remove('hidden');
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 resetRequest.addEventListener('click', () => {
     requestForm.reset();
     requestForm.classList.remove('hidden');
     requestSuccess.classList.add('hidden');
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 randomGameBtn.addEventListener('click', () => {
@@ -880,6 +741,124 @@ saveScoreBtn.addEventListener('click', () => {
 
 commentForm.addEventListener('submit', postComment);
 
+// AI Assistant Logic
+let aiSession = null;
+
+async function initAI() {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const model = "gemini-3-flash-preview";
+        
+        const systemInstruction = `
+            You are "Hunter AI", the official gaming assistant for Crazy Hunter Hub.
+            Your goal is to help users find games, explain how to play them, and provide fun facts.
+            
+            Here is the list of games currently available on the site:
+            ${JSON.stringify(games.map(g => ({ title: g.title, category: g.category, description: g.description, plays: g.plays, rating: g.baseRating })), null, 2)}
+            
+            Guidelines:
+            - Be friendly, enthusiastic, and helpful.
+            - Use emojis related to gaming 🎮 🕹️ 🚀.
+            - If a user asks for a recommendation, suggest games based on their interests or the categories available.
+            - Keep responses relatively concise but informative.
+            - If a user asks about a game NOT in the list, politely inform them it's not available yet but they can use the "Request Game" button.
+            - You can also help with site navigation (e.g., "Where are my favorites?" -> "They're in the My Favorites section at the top!").
+        `;
+
+        aiSession = ai.chats.create({
+            model: model,
+            config: {
+                systemInstruction: systemInstruction,
+            },
+        });
+    } catch (error) {
+        console.error('Failed to initialize Hunter AI:', error);
+    }
+}
+
+function addAIMessage(text, isUser = false) {
+    const messageEl = document.createElement('div');
+    messageEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+    
+    const icon = isUser ? 'user' : 'bot';
+    const bgColor = isUser ? 'bg-primary text-black' : 'bg-white/5 border border-white/10 text-white/80';
+    const rounded = isUser ? 'rounded-tr-none' : 'rounded-tl-none';
+
+    messageEl.innerHTML = `
+        <div class="w-8 h-8 ${isUser ? 'bg-primary' : 'bg-primary/20'} rounded-lg flex items-center justify-center ${isUser ? 'text-black' : 'text-primary'} shrink-0">
+            <i data-lucide="${icon}" class="w-4 h-4"></i>
+        </div>
+        <div class="${bgColor} rounded-2xl ${rounded} p-3 text-sm max-w-[85%] whitespace-pre-wrap">
+            ${text}
+        </div>
+    `;
+    
+    aiMessages.appendChild(messageEl);
+    aiMessages.scrollTo({ top: aiMessages.scrollHeight, behavior: 'smooth' });
+    lucide.createIcons();
+}
+
+async function handleAIChat(e) {
+    e.preventDefault();
+    const prompt = aiInput.value.trim();
+    if (!prompt) return;
+
+    if (!aiSession) {
+        await initAI();
+    }
+
+    // Add user message
+    addAIMessage(prompt, true);
+    aiInput.value = '';
+    aiInput.disabled = true;
+
+    // Add thinking indicator
+    const thinkingEl = document.createElement('div');
+    thinkingEl.id = 'ai-thinking';
+    thinkingEl.className = 'flex items-start gap-3';
+    thinkingEl.innerHTML = `
+        <div class="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary shrink-0">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-3 text-sm text-white/40 italic">
+            Hunter AI is thinking...
+        </div>
+    `;
+    aiMessages.appendChild(thinkingEl);
+    aiMessages.scrollTo({ top: aiMessages.scrollHeight, behavior: 'smooth' });
+    lucide.createIcons();
+
+    try {
+        const response = await aiSession.sendMessage({ message: prompt });
+        thinkingEl.remove();
+        addAIMessage(response.text);
+    } catch (error) {
+        console.error('AI Error:', error);
+        thinkingEl.remove();
+        addAIMessage("Oops! I hit a glitch in the matrix. 😵 Can you try asking that again?");
+    } finally {
+        aiInput.disabled = false;
+        aiInput.focus();
+    }
+}
+
+aiToggle.addEventListener('click', () => {
+    const isVisible = !aiChatWindow.classList.contains('invisible');
+    if (isVisible) {
+        aiChatWindow.classList.add('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
+    } else {
+        aiChatWindow.classList.remove('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
+        aiInput.focus();
+        if (!aiSession) initAI();
+    }
+});
+
+aiClose.addEventListener('click', () => {
+    aiChatWindow.classList.add('opacity-0', 'invisible', 'scale-95', 'translate-y-10');
+});
+
+aiForm.addEventListener('submit', handleAIChat);
+
 searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
 closeButton.addEventListener('click', closeGame);
@@ -895,11 +874,11 @@ if (openNewTabBtn) {
 }
 
 // Theme Logic
-function setTheme(themeName) {
+window.setTheme = function(themeName) {
     currentTheme = themeName;
     localStorage.setItem('crazyhunter_theme', themeName);
     applyTheme(themeName);
-}
+};
 
 function applyTheme(themeName) {
     const theme = themes[themeName];
@@ -915,4 +894,6 @@ function applyTheme(themeName) {
 
 // Initialize
 init();
-safeCreateIcons();
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}

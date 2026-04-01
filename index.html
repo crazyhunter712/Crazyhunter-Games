@@ -455,45 +455,59 @@
         </div>
     </div>
 
-    <!-- Hunter AI Chat Assistant -->
-    <div id="ai-chat-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <!-- Hunter AI Assistant -->
+    <div id="ai-assistant" class="fixed bottom-6 right-6 z-50">
+        <!-- Floating Button -->
+        <button id="ai-toggle" class="w-14 h-14 bg-primary text-black rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 transition-all active:scale-95 group relative">
+            <i data-lucide="bot" class="w-7 h-7"></i>
+            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-[#0a0a0a] rounded-full animate-pulse"></span>
+            <div class="absolute right-full mr-4 px-3 py-1.5 bg-white text-black text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+                Need help? Ask Hunter AI!
+            </div>
+        </button>
+
         <!-- Chat Window -->
-        <div id="ai-chat-window" class="hidden w-[350px] sm:w-[400px] h-[500px] bg-[#121212] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-300 scale-95 opacity-0 origin-bottom-right">
+        <div id="ai-chat-window" class="absolute bottom-20 right-0 w-[350px] sm:w-[400px] h-[500px] bg-[#121212] border border-white/10 rounded-[2rem] shadow-2xl flex flex-col overflow-hidden transition-all duration-500 translate-y-10 opacity-0 invisible scale-95">
             <!-- Header -->
-            <div class="p-5 bg-gradient-to-r from-primary to-primary-dark flex items-center justify-between">
+            <div class="p-5 bg-gradient-to-r from-primary/20 to-transparent border-b border-white/10 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center backdrop-blur-md">
-                        <i data-lucide="bot" class="w-6 h-6 text-black"></i>
+                    <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-black shadow-lg shadow-primary/20">
+                        <i data-lucide="bot" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <h3 class="text-black font-black uppercase tracking-tighter text-lg leading-none">Hunter AI</h3>
-                        <span class="text-[10px] text-black/60 font-bold uppercase tracking-widest">Online Assistant</span>
+                        <h3 class="font-bold text-sm">Hunter AI</h3>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Online Assistant</span>
+                        </div>
                     </div>
                 </div>
-                <button id="close-chat" class="p-2 hover:bg-black/10 rounded-xl transition-colors">
-                    <i data-lucide="minus" class="w-5 h-5 text-black"></i>
+                <button id="ai-close" class="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                    <i data-lucide="minus" class="w-5 h-5 text-white/40"></i>
                 </button>
             </div>
 
-            <!-- Messages Area -->
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-                <div class="flex gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="bot" class="w-4 h-4 text-primary"></i>
+            <!-- Messages -->
+            <div id="ai-messages" class="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary shrink-0">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
                     </div>
-                    <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/80 leading-relaxed">
-                        Hey there! I'm **Hunter AI**. Looking for a specific game or need a recommendation? I know everything about the Hub!
+                    <div class="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-3 text-sm text-white/80 max-w-[85%]">
+                        Hey there! I'm **Hunter AI**, your personal gaming assistant. 🎮
+                        <br><br>
+                        Need a game recommendation? Want to know how to play something? Just ask!
                     </div>
                 </div>
             </div>
 
-            <!-- Input Area -->
-            <div class="p-4 border-t border-white/10 bg-white/[0.02]">
-                <form id="chat-form" class="relative">
+            <!-- Input -->
+            <div class="p-4 bg-[#0a0a0a] border-t border-white/10">
+                <form id="ai-form" class="relative">
                     <input 
                         type="text" 
-                        id="chat-input"
-                        placeholder="Ask Hunter AI..."
+                        id="ai-input" 
+                        placeholder="Type your message..."
                         class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-4 pr-12 focus:outline-none focus:border-primary transition-all text-sm"
                     />
                     <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:scale-110 transition-transform">
@@ -502,18 +516,8 @@
                 </form>
             </div>
         </div>
-
-        <!-- Toggle Button -->
-        <button id="toggle-chat" class="w-16 h-16 bg-primary hover:bg-primary-dark text-black rounded-2xl shadow-2xl shadow-primary/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 group">
-            <i data-lucide="bot" class="w-8 h-8 group-hover:rotate-12 transition-transform"></i>
-            <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0a0a0a] rounded-full"></div>
-        </button>
     </div>
 
-    <script>
-        // Shim process.env for the browser
-        window.process = window.process || { env: {} };
-    </script>
     <script type="module" src="src/script.js"></script>
 </body>
 </html>
