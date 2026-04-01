@@ -219,64 +219,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Comments Section -->
-            <div id="comments-section" class="mt-12 border-t border-white/10 pt-12">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-primary/10 rounded-lg border border-primary/20">
-                            <i data-lucide="message-square" class="w-6 h-6 text-primary"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold">Tips & Reviews</h3>
-                    </div>
-                    <span id="comments-count" class="px-3 py-1 bg-white/5 rounded-full text-sm font-medium text-white/40 border border-white/10">0 Reviews</span>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <!-- Comment Form -->
-                    <div class="lg:col-span-1">
-                        <div class="bg-white/5 border border-white/10 rounded-3xl p-6 sticky top-24">
-                            <h4 class="font-bold text-lg mb-4">Leave a Review</h4>
-                            <form id="comment-form" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-white/40 mb-1.5">Your Name</label>
-                                    <input 
-                                        type="text" 
-                                        id="comment-author" 
-                                        required 
-                                        placeholder="Enter your name"
-                                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-primary transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-white/40 mb-1.5">Your Review or Tip</label>
-                                    <textarea 
-                                        id="comment-text" 
-                                        required 
-                                        rows="4"
-                                        placeholder="Share your thoughts or some tips for other players..."
-                                        class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-primary transition-all resize-none"
-                                    ></textarea>
-                                </div>
-                                <button type="submit" class="w-full py-4 bg-primary hover:bg-primary-dark text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2">
-                                    <span>Post Review</span>
-                                    <i data-lucide="send" class="w-4 h-4"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Comments List -->
-                    <div class="lg:col-span-2">
-                        <div id="comments-list" class="space-y-6">
-                            <!-- Comments will be injected here -->
-                            <div class="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
-                                <p class="text-white/40">No reviews yet. Be the first to leave one!</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -344,12 +286,7 @@
         </div>
     </div>
 
-    <!-- Debug Overlay -->
-    <div id="debug-log" class="fixed bottom-4 left-4 z-[100] bg-black/80 border border-white/10 rounded-lg p-2 text-[10px] font-mono text-white/40 max-w-[200px] pointer-events-none">
-        Initializing...
-    </div>
-
-    <script type="module" src="/src/script.js"></script>
+    <script src="src/script.js"></script>
 </body>
 </html>
 

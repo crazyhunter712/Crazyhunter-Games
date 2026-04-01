@@ -1,25 +1,11 @@
-console.log('Script loaded');
-document.title = 'Crazy Hunter Hub - Loading...';
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
 let searchQuery = '';
 let isFullscreen = false;
-let userRatings = {};
-try {
-    userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
-} catch (e) { console.warn('localStorage ratings fail', e); }
-
-let favorites = [];
-try {
-    favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
-} catch (e) { console.warn('localStorage favorites fail', e); }
-
-// Playtime Tracking
-let currentTheme = 'orange';
-try {
-    currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
-} catch (e) { console.warn('localStorage theme fail', e); }
+let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
+let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
+let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
@@ -47,23 +33,6 @@ const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
 
 const mainContainer = document.getElementById('main-container');
-const debugLog = document.getElementById('debug-log');
-
-function logToDebug(msg) {
-    if (debugLog) {
-        const time = new Date().toLocaleTimeString();
-        debugLog.textContent = `[${time}] ${msg}`;
-        console.log('DEBUG:', msg);
-    }
-}
-
-window.onerror = function(msg, url, line, col, error) {
-    logToDebug(`CRASH: ${msg} (${line}:${col})`);
-};
-
-window.onunhandledrejection = function(event) {
-    logToDebug(`PROMISE REJECT: ${event.reason}`);
-};
 
 // Request Modal Elements
 const requestModal = document.getElementById('request-modal');
@@ -73,61 +42,16 @@ const requestForm = document.getElementById('request-form');
 const requestSuccess = document.getElementById('request-success');
 const resetRequest = document.getElementById('reset-request');
 
-// Comments Elements
-const commentsList = document.getElementById('comments-list');
-const commentForm = document.getElementById('comment-form');
-const commentsCount = document.getElementById('comments-count');
-
-function safeCreateIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-    }
-}
-
 async function init() {
-    logToDebug('Init start');
-    if (totalGamesCount) {
-        totalGamesCount.textContent = 'Loading...';
-        totalGamesCount.style.color = '#f97316';
-    }
+    applyTheme(currentTheme);
     try {
-        logToDebug('Applying theme...');
-        applyTheme(currentTheme, false);
-        
-        logToDebug('Testing API...');
-        // Test API
-        fetch('/api/test').then(r => r.json()).then(d => {
-            logToDebug('API Test OK');
-            console.log('API Test:', d);
-        }).catch(e => {
-            logToDebug('API Test FAIL');
-            console.error('API Test Failed:', e);
-        });
-        
-        logToDebug('Fetching games...');
-        let response = await fetch(`/api/games?t=${Date.now()}`);
-        if (!response.ok) {
-            logToDebug('API fetch failed, trying games.json');
-            response = await fetch(`games.json?t=${Date.now()}`);
-        }
-        
-        if (!response.ok) {
-            logToDebug('games.json fetch failed, trying /games.json');
-            response = await fetch(`/games.json?t=${Date.now()}`);
-        }
-        
-        if (!response.ok) {
-            logToDebug(`Fetch failed: ${response.status}`);
-            throw new Error(`Failed to fetch games: ${response.status}`);
-        }
-        
+        const response = await fetch('./src/games.json');
+        if (!response.ok) throw new Error('Failed to fetch games');
         games = await response.json();
-        logToDebug(`Loaded ${games.length} games`);
-        document.title = 'Crazy Hunter Hub';
         filteredGames = [...games];
         renderGames();
         renderFavorites();
-        
+
         // Check for shared game in URL
         const urlParams = new URLSearchParams(window.location.search);
         const sharedGameId = urlParams.get('game');
@@ -137,28 +61,8 @@ async function init() {
                 setTimeout(() => openGame(sharedGame), 500);
             }
         }
-        safeCreateIcons();
     } catch (error) {
-        logToDebug(`INIT ERROR: ${error.message}`);
-        console.error('Initialization error:', error);
-        // Fallback game for debugging
-        if (games.length === 0) {
-            games = [{
-                id: 'fallback-game',
-                title: 'Check Connection',
-                description: 'The games list failed to load. Please refresh or check your internet connection.',
-                thumbnail: 'https://picsum.photos/seed/error/480/270',
-                iframeUrl: '',
-                baseRating: 0,
-                ratingCount: 0,
-                plays: '0',
-                avgPlayTime: 'N/A',
-                highScore: 'N/A'
-            }];
-            filteredGames = [...games];
-        }
-        renderGames();
-        renderFavorites();
+        console.error('Error loading games:', error);
     }
 }
 
@@ -172,12 +76,8 @@ function getAverageRating(game) {
 }
 
 function renderGames() {
-    if (!gamesGrid) return;
     gamesGrid.innerHTML = '';
-    if (totalGamesCount) {
-        totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
-        totalGamesCount.style.color = '';
-    }
+    totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
     
     if (filteredGames.length === 0) {
         gamesGrid.innerHTML = `
@@ -189,7 +89,7 @@ function renderGames() {
                 <p class="text-white/40">Try searching for something else.</p>
             </div>
         `;
-        safeCreateIcons();
+        lucide.createIcons();
         return;
     }
 
@@ -242,22 +142,19 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 function renderFavorites() {
-    if (!favoritesGrid) return;
     const favoriteGames = games.filter(game => favorites.includes(game.id));
-    if (favoritesCount) {
-        favoritesCount.textContent = `${favoriteGames.length} Game${favoriteGames.length !== 1 ? 's' : ''}`;
-    }
+    favoritesCount.textContent = `${favoriteGames.length} Game${favoriteGames.length !== 1 ? 's' : ''}`;
     
     if (favoriteGames.length === 0) {
-        if (favoritesSection) favoritesSection.classList.add('hidden');
+        favoritesSection.classList.add('hidden');
         return;
     }
 
-    if (favoritesSection) favoritesSection.classList.remove('hidden');
+    favoritesSection.classList.remove('hidden');
     favoritesGrid.innerHTML = '';
 
     favoriteGames.forEach(game => {
@@ -303,7 +200,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
 window.toggleFavorite = function(gameId) {
@@ -370,23 +267,21 @@ function openGame(game) {
     gameIframe.src = game.iframeUrl;
     
     // Handle iframe load
-    if (gameIframe) {
-        gameIframe.onload = () => {
-            clearInterval(interval);
-            if (loadingBar) loadingBar.style.width = '100%';
-            
-            setTimeout(() => {
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('opacity-0', 'invisible');
-                    loadingOverlay.classList.remove('opacity-100', 'visible');
-                }
-            }, 500);
-        };
-    }
+    gameIframe.onload = () => {
+        clearInterval(interval);
+        if (loadingBar) loadingBar.style.width = '100%';
+        
+        setTimeout(() => {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('opacity-0', 'invisible');
+                loadingOverlay.classList.remove('opacity-100', 'visible');
+            }
+        }, 500);
+    };
 
-    if (gameTitle) gameTitle.textContent = game.title;
-    if (aboutTitle) aboutTitle.textContent = `About ${game.title}`;
-    if (aboutDescription) aboutDescription.textContent = game.description;
+    gameTitle.textContent = game.title;
+    aboutTitle.textContent = `About ${game.title}`;
+    aboutDescription.textContent = game.description;
     
     // Inject stats interface
     const statsContainer = document.createElement('div');
@@ -458,80 +353,18 @@ function openGame(game) {
     ratingContainer.id = 'game-rating-ui';
     
     const infoPanel = document.querySelector('#game-info .flex-1');
-    if (infoPanel) {
-        infoPanel.appendChild(statsContainer);
-        infoPanel.appendChild(ratingContainer);
-    }
+    infoPanel.appendChild(statsContainer);
+    infoPanel.appendChild(ratingContainer);
     
-    const gridView = document.getElementById('grid-view');
-    if (gridView) gridView.classList.add('hidden');
-    if (gamePlay) gamePlay.classList.remove('hidden');
-    if (mainContainer) {
-        mainContainer.classList.remove('max-w-7xl');
-        mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
-    }
+    document.getElementById('grid-view').classList.add('hidden');
+    gamePlay.classList.remove('hidden');
+    mainContainer.classList.remove('max-w-7xl');
+    mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Load comments
-    loadComments(game.id);
-
-    safeCreateIcons();
+    lucide.createIcons();
 }
 
-async function loadComments(gameId) {
-    try {
-        const response = await fetch(`/api/comments/${gameId}`);
-        if (!response.ok) throw new Error('Failed to fetch comments');
-        const comments = await response.json();
-        renderComments(comments);
-    } catch (error) {
-        console.error('Error loading comments:', error);
-    }
-}
-
-function renderComments(comments) {
-    if (commentsCount) {
-        commentsCount.textContent = `${comments.length} Review${comments.length !== 1 ? 's' : ''}`;
-    }
-    
-    if (!commentsList) return;
-
-    if (comments.length === 0) {
-        commentsList.innerHTML = `
-            <div class="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
-                <p class="text-white/40">No reviews yet. Be the first to leave one!</p>
-            </div>
-        `;
-        return;
-    }
-
-    commentsList.innerHTML = comments.map(comment => `
-        <div class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:bg-white/10 transition-all">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
-                        ${comment.author.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <h5 class="font-bold">${comment.author}</h5>
-                        <p class="text-xs text-white/40">${new Date(comment.date).toLocaleDateString()}</p>
-                    </div>
-                </div>
-                ${comment.rating > 0 ? `
-                    <div class="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
-                        <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
-                        <span class="text-xs font-bold text-primary">${comment.rating}</span>
-                    </div>
-                ` : ''}
-            </div>
-            <p class="text-white/70 leading-relaxed">${comment.text}</p>
-        </div>
-    `).join('');
-    
-    safeCreateIcons();
-}
-
-window.rateGame = async function(gameId, rating) {
+window.rateGame = function(gameId, rating) {
     userRatings[gameId] = rating;
     localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
     
@@ -543,7 +376,7 @@ window.rateGame = async function(gameId, rating) {
 
 function closeGame() {
     selectedGame = null;
-    if (gameIframe) gameIframe.src = '';
+    gameIframe.src = '';
     
     // Reset loading state
     if (loadingOverlay) {
@@ -552,13 +385,10 @@ function closeGame() {
     }
     if (loadingBar) loadingBar.style.width = '0%';
 
-    const gridView = document.getElementById('grid-view');
-    if (gridView) gridView.classList.remove('hidden');
-    if (gamePlay) gamePlay.classList.add('hidden');
-    if (mainContainer) {
-        mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
-        mainContainer.classList.add('max-w-7xl');
-    }
+    document.getElementById('grid-view').classList.remove('hidden');
+    gamePlay.classList.add('hidden');
+    mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
+    mainContainer.classList.add('max-w-7xl');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     renderGames(); // Refresh grid to show new ratings
 }
@@ -593,97 +423,51 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    safeCreateIcons();
+    lucide.createIcons();
 });
 
 // Modal Logic
-if (requestGameBtn) {
-    requestGameBtn.addEventListener('click', () => {
-        requestModal.classList.remove('hidden');
-        requestForm.classList.remove('hidden');
-        requestSuccess.classList.add('hidden');
-        safeCreateIcons();
-    });
-}
+requestGameBtn.addEventListener('click', () => {
+    requestModal.classList.remove('hidden');
+    requestForm.classList.remove('hidden');
+    requestSuccess.classList.add('hidden');
+    lucide.createIcons();
+});
 
-if (closeRequestModal) {
-    closeRequestModal.addEventListener('click', () => {
-        requestModal.classList.add('hidden');
-    });
-}
+closeRequestModal.addEventListener('click', () => {
+    requestModal.classList.add('hidden');
+});
 
-if (requestModal) {
-    requestModal.addEventListener('click', (e) => {
-        if (e.target === requestModal) requestModal.classList.add('hidden');
-    });
-}
+requestModal.addEventListener('click', (e) => {
+    if (e.target === requestModal) requestModal.classList.add('hidden');
+});
 
-if (requestForm) {
-    requestForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const title = document.getElementById('req-title').value;
-        const url = document.getElementById('req-url').value;
-        
-        // Save to local storage (simulating "working")
-        const requests = JSON.parse(localStorage.getItem('crazyhunter_requests') || '[]');
-        requests.push({ title, url, date: new Date().toISOString() });
-        localStorage.setItem('crazyhunter_requests', JSON.stringify(requests));
-        
-        requestForm.classList.add('hidden');
-        requestSuccess.classList.remove('hidden');
-        safeCreateIcons();
-    });
-}
+requestForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('req-title').value;
+    const url = document.getElementById('req-url').value;
+    
+    // Save to local storage (simulating "working")
+    const requests = JSON.parse(localStorage.getItem('crazyhunter_requests') || '[]');
+    requests.push({ title, url, date: new Date().toISOString() });
+    localStorage.setItem('crazyhunter_requests', JSON.stringify(requests));
+    
+    requestForm.classList.add('hidden');
+    requestSuccess.classList.remove('hidden');
+    lucide.createIcons();
+});
 
-if (resetRequest) {
-    resetRequest.addEventListener('click', () => {
-        requestForm.reset();
-        requestForm.classList.remove('hidden');
-        requestSuccess.classList.add('hidden');
-        safeCreateIcons();
-    });
-}
+resetRequest.addEventListener('click', () => {
+    requestForm.reset();
+    requestForm.classList.remove('hidden');
+    requestSuccess.classList.add('hidden');
+    lucide.createIcons();
+});
 
-if (searchInput) searchInput.addEventListener('input', handleSearch);
-if (backButton) backButton.addEventListener('click', closeGame);
-if (closeButton) closeButton.addEventListener('click', closeGame);
-if (fullscreenButton) fullscreenButton.addEventListener('click', toggleFullscreen);
-
-if (commentForm) {
-    commentForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!selectedGame) return;
-
-        const authorInput = document.getElementById('comment-author');
-        const textInput = document.getElementById('comment-text');
-        
-        const commentData = {
-            gameId: selectedGame.id,
-            author: authorInput.value,
-            text: textInput.value,
-            rating: userRatings[selectedGame.id] || 0
-        };
-
-        try {
-            const response = await fetch('/api/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(commentData)
-            });
-
-            if (!response.ok) throw new Error('Failed to post comment');
-            
-            // Refresh comments
-            loadComments(selectedGame.id);
-            
-            // Reset form
-            textInput.value = '';
-        } catch (error) {
-            console.error('Error posting comment:', error);
-            alert('Failed to post review. Please try again.');
-        }
-    });
-}
+searchInput.addEventListener('input', handleSearch);
+backButton.addEventListener('click', closeGame);
+closeButton.addEventListener('click', closeGame);
+fullscreenButton.addEventListener('click', toggleFullscreen);
 
 const openNewTabBtn = document.getElementById('open-new-tab');
 if (openNewTabBtn) {
@@ -701,28 +485,20 @@ window.setTheme = function(themeName) {
     applyTheme(themeName);
 };
 
-function applyTheme(themeName, shouldRender = true) {
+function applyTheme(themeName) {
     const theme = themes[themeName];
-    if (!theme) return;
     document.documentElement.style.setProperty('--primary-color', theme.primary);
     document.documentElement.style.setProperty('--primary-color-dark', theme.dark);
     
     const dot = document.getElementById('current-theme-dot');
     if (dot) dot.style.backgroundColor = theme.primary;
     
-    if (shouldRender) {
-        renderGames();
-        renderFavorites();
-    }
+    renderGames();
+    renderFavorites();
 }
 
 // Initialize
-if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', () => {
-        init();
-        safeCreateIcons();
-    });
-} else {
-    init();
-    safeCreateIcons();
+init();
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
 }
