@@ -55,16 +55,26 @@ function safeCreateIcons() {
 }
 
 async function init() {
+    console.log('Initializing app...');
     try {
         applyTheme(currentTheme, false);
         
-        const response = await fetch('/src/games.json');
-        if (!response.ok) throw new Error('Failed to fetch games');
+        let response = await fetch('games.json');
+        if (!response.ok) {
+            console.warn('Fetch games.json failed, trying /games.json');
+            response = await fetch('/games.json');
+        }
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch games: ${response.status}`);
+        }
+        
         games = await response.json();
+        console.log('Loaded games:', games.length);
         filteredGames = [...games];
         renderGames();
         renderFavorites();
-
+        
         // Check for shared game in URL
         const urlParams = new URLSearchParams(window.location.search);
         const sharedGameId = urlParams.get('game');
@@ -77,7 +87,6 @@ async function init() {
         safeCreateIcons();
     } catch (error) {
         console.error('Initialization error:', error);
-        // Fallback: render empty state if fetch fails
         renderGames();
         renderFavorites();
     }
@@ -637,7 +646,12 @@ function applyTheme(themeName, shouldRender = true) {
 }
 
 // Initialize
-window.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', () => {
+        init();
+        safeCreateIcons();
+    });
+} else {
     init();
     safeCreateIcons();
-});
+}
