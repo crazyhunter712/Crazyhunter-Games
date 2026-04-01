@@ -5,7 +5,11 @@ let searchQuery = '';
 let isFullscreen = false;
 let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
 let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
+let recentGames = JSON.parse(localStorage.getItem('crazyhunter_recent') || '[]');
+let personalScores = JSON.parse(localStorage.getItem('crazyhunter_scores') || '{}');
 let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
+let currentCategory = 'all';
+let currentSort = 'default';
 
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
@@ -17,6 +21,9 @@ const themes = {
 const gamesGrid = document.getElementById('games-grid');
 const favoritesGrid = document.getElementById('favorites-grid');
 const favoritesSection = document.getElementById('favorites-section');
+const recentSection = document.getElementById('recent-section');
+const recentGrid = document.getElementById('recent-grid');
+const categoryFilters = document.getElementById('category-filters');
 const favoritesCount = document.getElementById('favorites-count');
 const totalGamesCount = document.getElementById('total-games-count');
 const gamePlay = document.getElementById('game-play');
@@ -29,8 +36,13 @@ const gameIframe = document.getElementById('game-iframe');
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingBar = document.getElementById('loading-bar');
 const gameTitle = document.getElementById('game-title');
+const gameCategoryTag = document.getElementById('game-category-tag');
 const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
+const personalScoreInput = document.getElementById('personal-score-input');
+const saveScoreBtn = document.getElementById('save-score-btn');
+const savedScoreDisplay = document.getElementById('saved-score-display');
+const currentSortLabel = document.getElementById('current-sort-label');
 
 const mainContainer = document.getElementById('main-container');
 
@@ -41,6 +53,7 @@ const closeRequestModal = document.getElementById('close-request-modal');
 const requestForm = document.getElementById('request-form');
 const requestSuccess = document.getElementById('request-success');
 const resetRequest = document.getElementById('reset-request');
+const randomGameBtn = document.getElementById('random-game-btn');
 
 async function init() {
     applyTheme(currentTheme);
@@ -49,8 +62,11 @@ async function init() {
         if (!response.ok) throw new Error('Failed to fetch games');
         games = await response.json();
         filteredGames = [...games];
+        renderCategories();
         renderGames();
         renderFavorites();
+        renderRecent();
+        renderGameOfTheDay();
 
         // Check for shared game in URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -77,9 +93,34 @@ function getAverageRating(game) {
 
 function renderGames() {
     gamesGrid.innerHTML = '';
-    totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
     
-    if (filteredGames.length === 0) {
+    let displayGames = [...filteredGames];
+    
+    // Filter by category
+    if (currentCategory !== 'all') {
+        displayGames = displayGames.filter(g => g.category === currentCategory);
+    }
+
+    // Sort games
+    switch(currentSort) {
+        case 'plays':
+            displayGames.sort((a, b) => {
+                const aPlays = a.plays.includes('M') ? parseFloat(a.plays) * 1000000 : parseFloat(a.plays) * 1000;
+                const bPlays = b.plays.includes('M') ? parseFloat(b.plays) * 1000000 : parseFloat(b.plays) * 1000;
+                return bPlays - aPlays;
+            });
+            break;
+        case 'rating':
+            displayGames.sort((a, b) => getAverageRating(b) - getAverageRating(a));
+            break;
+        case 'title':
+            displayGames.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+    }
+
+    totalGamesCount.textContent = `${displayGames.length} Game${displayGames.length !== 1 ? 's' : ''}`;
+    
+    if (displayGames.length === 0) {
         gamesGrid.innerHTML = `
             <div class="col-span-full text-center py-20">
                 <div class="inline-block p-4 bg-white/5 rounded-full mb-4">
@@ -93,52 +134,8 @@ function renderGames() {
         return;
     }
 
-    filteredGames.forEach(game => {
-        const avgRating = getAverageRating(game);
-        const isFavorite = favorites.includes(game.id);
-        const card = document.createElement('div');
-        card.className = 'group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10 transform hover:-translate-y-1';
-        card.innerHTML = `
-            <div class="aspect-video overflow-hidden relative">
-                <img
-                    src="${game.thumbnail}"
-                    alt="${game.title}"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    referrerpolicy="no-referrer"
-                />
-                <div class="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
-                    <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
-                    <span class="text-xs font-bold">${avgRating}</span>
-                </div>
-                <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
-                    <i data-lucide="play" class="w-3 h-3 text-white/60"></i>
-                    <span class="text-[10px] font-medium text-white/80">${game.plays || '0'}</span>
-                </div>
-                <button 
-                    onclick="event.stopPropagation(); toggleFavorite('${game.id}')"
-                    class="absolute top-2 right-2 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/heart"
-                >
-                    <i data-lucide="heart" class="w-4 h-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white/40 group-hover/heart:text-red-500'}"></i>
-                </button>
-                <button 
-                    onclick="event.stopPropagation(); shareGame('${game.id}')"
-                    class="absolute top-2 right-12 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/share"
-                    title="Share Game"
-                >
-                    <i data-lucide="share-2" class="w-4 h-4 text-white/40 group-hover/share:text-primary"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <h3 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors">${game.title}</h3>
-                <p class="text-sm text-white/60 line-clamp-2">${game.description}</p>
-            </div>
-            <div class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div class="bg-primary p-2 rounded-full shadow-lg">
-                    <i data-lucide="external-link" class="w-4 h-4 text-black"></i>
-                </div>
-            </div>
-        `;
-        card.onclick = () => openGame(game);
+    displayGames.forEach(game => {
+        const card = createGameCard(game);
         gamesGrid.appendChild(card);
     });
     
@@ -159,48 +156,146 @@ function renderFavorites() {
 
     favoriteGames.forEach(game => {
         const avgRating = getAverageRating(game);
-        const card = document.createElement('div');
-        card.className = 'group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10 transform hover:-translate-y-1';
-        card.innerHTML = `
-            <div class="aspect-video overflow-hidden relative">
-                <img
-                    src="${game.thumbnail}"
-                    alt="${game.title}"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    referrerpolicy="no-referrer"
-                />
-                <div class="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
-                    <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
-                    <span class="text-xs font-bold">${avgRating}</span>
-                </div>
-                <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
-                    <i data-lucide="play" class="w-3 h-3 text-white/60"></i>
-                    <span class="text-[10px] font-medium text-white/80">${game.plays || '0'}</span>
-                </div>
-                <button 
-                    onclick="event.stopPropagation(); toggleFavorite('${game.id}')"
-                    class="absolute top-2 right-2 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all"
-                >
-                    <i data-lucide="heart" class="w-4 h-4 text-red-500 fill-red-500"></i>
-                </button>
-                <button 
-                    onclick="event.stopPropagation(); shareGame('${game.id}')"
-                    class="absolute top-2 right-12 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/share"
-                    title="Share Game"
-                >
-                    <i data-lucide="share-2" class="w-4 h-4 text-white/40 group-hover/share:text-primary"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <h3 class="font-bold text-lg mb-1 group-hover:text-primary transition-colors">${game.title}</h3>
-                <p class="text-sm text-white/60 line-clamp-2">${game.description}</p>
-            </div>
-        `;
-        card.onclick = () => openGame(game);
+        const card = createGameCard(game, true);
         favoritesGrid.appendChild(card);
     });
     
     lucide.createIcons();
+}
+
+function renderRecent() {
+    if (recentGames.length === 0) {
+        recentSection.classList.add('hidden');
+        return;
+    }
+
+    recentSection.classList.remove('hidden');
+    recentGrid.innerHTML = '';
+
+    // Show last 4 recent games
+    const displayRecent = recentGames.slice(0, 4);
+    displayRecent.forEach(gameId => {
+        const game = games.find(g => g.id === gameId);
+        if (game) {
+            const card = createGameCard(game);
+            recentGrid.appendChild(card);
+        }
+    });
+    
+    lucide.createIcons();
+}
+
+function renderCategories() {
+    const categories = ['all', ...new Set(games.map(g => g.category))];
+    categoryFilters.innerHTML = '';
+    
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.onclick = () => setCategory(cat);
+        btn.className = `category-btn px-6 py-2.5 rounded-2xl transition-all font-bold text-sm whitespace-nowrap ${currentCategory === cat ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'}`;
+        btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+        categoryFilters.appendChild(btn);
+    });
+}
+
+function renderGameOfTheDay() {
+    const today = new Date().toDateString();
+    const seed = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const gotd = games[seed % games.length];
+    
+    const gotdSection = document.getElementById('game-of-the-day');
+    const gotdImage = document.getElementById('gotd-image');
+    const gotdTitle = document.getElementById('gotd-title');
+    const gotdDesc = document.getElementById('gotd-desc');
+    const gotdPlayBtn = document.getElementById('gotd-play-btn');
+    
+    if (gotd) {
+        gotdImage.src = gotd.thumbnail;
+        gotdTitle.textContent = gotd.title;
+        gotdDesc.textContent = gotd.description;
+        gotdSection.onclick = () => openGame(gotd);
+        gotdPlayBtn.onclick = (e) => {
+            e.stopPropagation();
+            openGame(gotd);
+        };
+    }
+}
+
+window.setCategory = function(cat) {
+    currentCategory = cat;
+    renderCategories();
+    renderGames();
+};
+
+window.setSort = function(sortType) {
+    currentSort = sortType;
+    const labels = {
+        default: 'Sort: Default',
+        plays: 'Sort: Most Played',
+        rating: 'Sort: Top Rated',
+        title: 'Sort: A-Z'
+    };
+    currentSortLabel.textContent = labels[sortType];
+    renderGames();
+};
+
+function createGameCard(game, isFavoriteList = false) {
+    const avgRating = getAverageRating(game);
+    const isFavorite = favorites.includes(game.id);
+    const isTrending = game.plays && (game.plays.includes('M') || parseInt(game.plays) > 500);
+    const card = document.createElement('div');
+    card.className = 'group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/10 transform hover:-translate-y-1';
+    card.innerHTML = `
+        <div class="aspect-video overflow-hidden relative">
+            <img
+                src="${game.thumbnail}"
+                alt="${game.title}"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                referrerpolicy="no-referrer"
+            />
+            ${isTrending ? `
+            <div class="absolute top-2 left-12 px-2 py-1 bg-primary text-black rounded-lg flex items-center gap-1 border border-primary/20 shadow-lg shadow-primary/20">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>
+                <span class="text-[10px] font-black uppercase">Trending</span>
+            </div>
+            ` : ''}
+            <div class="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
+                <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
+                <span class="text-xs font-bold">${avgRating}</span>
+            </div>
+            <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1 border border-white/10">
+                <i data-lucide="play" class="w-3 h-3 text-white/60"></i>
+                <span class="text-[10px] font-medium text-white/80">${game.plays || '0'}</span>
+            </div>
+            <button 
+                onclick="event.stopPropagation(); toggleFavorite('${game.id}')"
+                class="absolute top-2 right-2 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/heart"
+            >
+                <i data-lucide="heart" class="w-4 h-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white/40 group-hover/heart:text-red-500'}"></i>
+            </button>
+            <button 
+                onclick="event.stopPropagation(); shareGame('${game.id}')"
+                class="absolute top-2 right-12 p-2 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 hover:bg-white/10 transition-all group/share"
+                title="Share Game"
+            >
+                <i data-lucide="share-2" class="w-4 h-4 text-white/40 group-hover/share:text-primary"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-1">
+                <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${game.title}</h3>
+                <span class="text-[10px] px-2 py-0.5 bg-white/5 rounded-full text-white/40 font-bold uppercase tracking-wider">${game.category}</span>
+            </div>
+            <p class="text-sm text-white/60 line-clamp-2">${game.description}</p>
+        </div>
+        <div class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="bg-primary p-2 rounded-full shadow-lg">
+                <i data-lucide="external-link" class="w-4 h-4 text-black"></i>
+            </div>
+        </div>
+    `;
+    card.onclick = () => openGame(game);
+    return card;
 }
 
 window.toggleFavorite = function(gameId) {
@@ -246,6 +341,11 @@ window.shareGame = async function(gameId) {
 function openGame(game) {
     selectedGame = game;
     
+    // Add to recent games
+    recentGames = [game.id, ...recentGames.filter(id => id !== game.id)].slice(0, 10);
+    localStorage.setItem('crazyhunter_recent', JSON.stringify(recentGames));
+    renderRecent();
+
     // Show loading overlay
     if (loadingOverlay) {
         loadingOverlay.classList.remove('opacity-0', 'invisible');
@@ -280,8 +380,20 @@ function openGame(game) {
     };
 
     gameTitle.textContent = game.title;
+    gameCategoryTag.textContent = game.category;
     aboutTitle.textContent = `About ${game.title}`;
     aboutDescription.textContent = game.description;
+
+    // Load personal high score
+    const savedScore = personalScores[game.id];
+    if (savedScore) {
+        personalScoreInput.value = savedScore;
+        savedScoreDisplay.innerHTML = `Current Best: <span class="text-white font-bold">${savedScore}</span>`;
+        savedScoreDisplay.classList.remove('hidden');
+    } else {
+        personalScoreInput.value = '';
+        savedScoreDisplay.classList.add('hidden');
+    }
     
     // Inject stats interface
     const statsContainer = document.createElement('div');
@@ -462,6 +574,27 @@ resetRequest.addEventListener('click', () => {
     requestForm.classList.remove('hidden');
     requestSuccess.classList.add('hidden');
     lucide.createIcons();
+});
+
+randomGameBtn.addEventListener('click', () => {
+    const randomGame = games[Math.floor(Math.random() * games.length)];
+    openGame(randomGame);
+});
+
+saveScoreBtn.addEventListener('click', () => {
+    if (selectedGame) {
+        const score = personalScoreInput.value.trim();
+        if (score) {
+            personalScores[selectedGame.id] = score;
+            localStorage.setItem('crazyhunter_scores', JSON.stringify(personalScores));
+            savedScoreDisplay.innerHTML = `Current Best: <span class="text-white font-bold">${score}</span>`;
+            savedScoreDisplay.classList.remove('hidden');
+            
+            // Visual feedback
+            saveScoreBtn.classList.add('bg-green-500');
+            setTimeout(() => saveScoreBtn.classList.remove('bg-green-500'), 1000);
+        }
+    }
 });
 
 searchInput.addEventListener('input', handleSearch);
