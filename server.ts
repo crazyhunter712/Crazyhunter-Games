@@ -19,8 +19,31 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+  app.use(express.static("public"));
 
   // API Routes
+  app.get("/api/test", (req, res) => {
+    res.json({ message: "API is working", time: new Date().toISOString() });
+  });
+
+  app.get("/api/games", (req, res) => {
+    console.log('Fetching games from API...');
+    try {
+      const gamesPath = path.join(process.cwd(), "public", "games.json");
+      console.log('Reading games from:', gamesPath);
+      if (!fs.existsSync(gamesPath)) {
+        console.error('games.json NOT FOUND at:', gamesPath);
+        return res.status(404).json({ error: "games.json not found" });
+      }
+      const games = JSON.parse(fs.readFileSync(gamesPath, "utf-8"));
+      console.log('Loaded games from file:', games.length);
+      res.json(games);
+    } catch (error) {
+      console.error('Failed to fetch games from API:', error);
+      res.status(500).json({ error: "Failed to fetch games", details: error.message });
+    }
+  });
+
   app.get("/api/comments/:gameId", (req, res) => {
     try {
       const comments = JSON.parse(fs.readFileSync(COMMENTS_FILE, "utf-8"));

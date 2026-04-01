@@ -1,3 +1,5 @@
+console.log('Script loaded');
+document.title = 'Crazy Hunter Hub - Loading...';
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
@@ -34,6 +36,14 @@ const aboutTitle = document.getElementById('about-title');
 const aboutDescription = document.getElementById('about-description');
 
 const mainContainer = document.getElementById('main-container');
+const debugLog = document.getElementById('debug-log');
+
+function logToDebug(msg) {
+    if (debugLog) {
+        debugLog.textContent = msg;
+        console.log('DEBUG:', msg);
+    }
+}
 
 // Request Modal Elements
 const requestModal = document.getElementById('request-modal');
@@ -55,22 +65,37 @@ function safeCreateIcons() {
 }
 
 async function init() {
-    console.log('Initializing app...');
+    logToDebug('Initializing app...');
+    if (totalGamesCount) {
+        totalGamesCount.textContent = 'Loading...';
+        totalGamesCount.style.color = '#f97316';
+    }
     try {
         applyTheme(currentTheme, false);
         
-        let response = await fetch('games.json');
+        // Test API
+        fetch('/api/test').then(r => r.json()).then(d => console.log('API Test:', d)).catch(e => console.error('API Test Failed:', e));
+        
+        logToDebug('Fetching games...');
+        let response = await fetch(`/api/games?t=${Date.now()}`);
         if (!response.ok) {
-            console.warn('Fetch games.json failed, trying /games.json');
-            response = await fetch('/games.json');
+            logToDebug('API fetch failed, trying games.json');
+            response = await fetch(`games.json?t=${Date.now()}`);
         }
         
         if (!response.ok) {
+            logToDebug('games.json fetch failed, trying /games.json');
+            response = await fetch(`/games.json?t=${Date.now()}`);
+        }
+        
+        if (!response.ok) {
+            logToDebug(`Fetch failed: ${response.status}`);
             throw new Error(`Failed to fetch games: ${response.status}`);
         }
         
         games = await response.json();
-        console.log('Loaded games:', games.length);
+        logToDebug(`Loaded ${games.length} games`);
+        document.title = 'Crazy Hunter Hub';
         filteredGames = [...games];
         renderGames();
         renderFavorites();
@@ -87,6 +112,22 @@ async function init() {
         safeCreateIcons();
     } catch (error) {
         console.error('Initialization error:', error);
+        // Fallback game for debugging
+        if (games.length === 0) {
+            games = [{
+                id: 'fallback-game',
+                title: 'Check Connection',
+                description: 'The games list failed to load. Please refresh or check your internet connection.',
+                thumbnail: 'https://picsum.photos/seed/error/480/270',
+                iframeUrl: '',
+                baseRating: 0,
+                ratingCount: 0,
+                plays: '0',
+                avgPlayTime: 'N/A',
+                highScore: 'N/A'
+            }];
+            filteredGames = [...games];
+        }
         renderGames();
         renderFavorites();
     }
@@ -106,6 +147,7 @@ function renderGames() {
     gamesGrid.innerHTML = '';
     if (totalGamesCount) {
         totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
+        totalGamesCount.style.color = '';
     }
     
     if (filteredGames.length === 0) {
