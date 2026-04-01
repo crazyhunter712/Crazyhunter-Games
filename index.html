@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crazy Hunter Hub</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CrazyHunter">
+    <link rel="apple-touch-icon" href="https://picsum.photos/seed/crazyhunter/192/192">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -84,6 +90,11 @@
             </div>
 
             <div class="flex items-center gap-4">
+                <button id="install-app-btn" class="hidden p-2 bg-primary/10 hover:bg-primary/20 rounded-xl border border-primary/20 transition-all text-primary flex items-center gap-2 px-3" title="Install App">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                    <span class="text-xs font-bold hidden md:inline">Install App</span>
+                </button>
+
                 <button id="random-game-btn" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-white/60 hover:text-primary" title="Random Game">
                     <i data-lucide="shuffle" class="w-5 h-5"></i>
                 </button>

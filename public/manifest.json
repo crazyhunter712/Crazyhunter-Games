@@ -1,0 +1,23 @@
+{
+  "name": "Crazy Hunter Hub",
+  "short_name": "CrazyHunter",
+  "description": "The ultimate unblocked game hub for gamers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/crazyhunter/192/192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://picsum.photos/seed/crazyhunter/512/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

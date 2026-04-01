@@ -58,6 +58,10 @@ const trailerModalContent = document.getElementById('trailer-modal-content');
 const trailerIframe = document.getElementById('trailer-iframe');
 const closeTrailerBtn = document.getElementById('close-trailer-btn');
 
+// PWA Elements
+const installAppBtn = document.getElementById('install-app-btn');
+let deferredPrompt;
+
 const mainContainer = document.getElementById('main-container');
 
 // Request Modal Elements
@@ -71,6 +75,16 @@ const randomGameBtn = document.getElementById('random-game-btn');
 
 async function init() {
     applyTheme(currentTheme);
+    
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => console.log('SW registered:', registration))
+                .catch(error => console.log('SW registration failed:', error));
+        });
+    }
+
     try {
         const response = await fetch('./src/games.json');
         if (!response.ok) throw new Error('Failed to fetch games');
@@ -773,6 +787,31 @@ trailerModal.addEventListener('click', (e) => {
 });
 
 searchInput.addEventListener('input', handleSearch);
+
+// PWA Install Logic
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installAppBtn.classList.remove('hidden');
+});
+
+installAppBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        }
+        deferredPrompt = null;
+        installAppBtn.classList.add('hidden');
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    installAppBtn.classList.add('hidden');
+});
+
 backButton.addEventListener('click', closeGame);
 closeButton.addEventListener('click', closeGame);
 fullscreenButton.addEventListener('click', toggleFullscreen);
