@@ -51,6 +51,13 @@ const commentCount = document.getElementById('comment-count');
 const commentStars = document.getElementById('comment-stars');
 const commentRatingVal = document.getElementById('comment-rating-val');
 
+// Trailer Elements
+const watchTrailerBtn = document.getElementById('watch-trailer-btn');
+const trailerModal = document.getElementById('trailer-modal');
+const trailerModalContent = document.getElementById('trailer-modal-content');
+const trailerIframe = document.getElementById('trailer-iframe');
+const closeTrailerBtn = document.getElementById('close-trailer-btn');
+
 const mainContainer = document.getElementById('main-container');
 
 // Request Modal Elements
@@ -352,6 +359,13 @@ function openGame(game) {
     recentGames = [game.id, ...recentGames.filter(id => id !== game.id)].slice(0, 10);
     localStorage.setItem('crazyhunter_recent', JSON.stringify(recentGames));
     renderRecent();
+
+    // Trailer button visibility
+    if (game.trailerUrl) {
+        watchTrailerBtn.classList.remove('hidden');
+    } else {
+        watchTrailerBtn.classList.add('hidden');
+    }
 
     // Fetch and render comments
     fetchComments(game.id);
@@ -671,6 +685,27 @@ async function postComment(e) {
 }
 
 // Modal Logic
+function openTrailer() {
+    if (!selectedGame || !selectedGame.trailerUrl) return;
+    
+    trailerIframe.src = selectedGame.trailerUrl;
+    trailerModal.classList.remove('hidden');
+    setTimeout(() => {
+        trailerModal.classList.remove('opacity-0');
+        trailerModalContent.classList.remove('scale-95');
+    }, 10);
+}
+
+function closeTrailer() {
+    trailerModal.classList.add('opacity-0');
+    trailerModalContent.classList.add('scale-95');
+    setTimeout(() => {
+        trailerModal.classList.add('hidden');
+        trailerIframe.src = '';
+    }, 300);
+}
+
+// Modal Logic
 requestGameBtn.addEventListener('click', () => {
     requestModal.classList.remove('hidden');
     requestForm.classList.remove('hidden');
@@ -730,6 +765,12 @@ saveScoreBtn.addEventListener('click', () => {
 });
 
 commentForm.addEventListener('submit', postComment);
+
+watchTrailerBtn.addEventListener('click', openTrailer);
+closeTrailerBtn.addEventListener('click', closeTrailer);
+trailerModal.addEventListener('click', (e) => {
+    if (e.target === trailerModal) closeTrailer();
+});
 
 searchInput.addEventListener('input', handleSearch);
 backButton.addEventListener('click', closeGame);
