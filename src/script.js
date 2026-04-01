@@ -5,10 +5,21 @@ let filteredGames = [];
 let selectedGame = null;
 let searchQuery = '';
 let isFullscreen = false;
-let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
-let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
+let userRatings = {};
+try {
+    userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}');
+} catch (e) { console.warn('localStorage ratings fail', e); }
+
+let favorites = [];
+try {
+    favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
+} catch (e) { console.warn('localStorage favorites fail', e); }
+
 // Playtime Tracking
-let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
+let currentTheme = 'orange';
+try {
+    currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
+} catch (e) { console.warn('localStorage theme fail', e); }
 
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
@@ -40,10 +51,19 @@ const debugLog = document.getElementById('debug-log');
 
 function logToDebug(msg) {
     if (debugLog) {
-        debugLog.textContent = msg;
+        const time = new Date().toLocaleTimeString();
+        debugLog.textContent = `[${time}] ${msg}`;
         console.log('DEBUG:', msg);
     }
 }
+
+window.onerror = function(msg, url, line, col, error) {
+    logToDebug(`CRASH: ${msg} (${line}:${col})`);
+};
+
+window.onunhandledrejection = function(event) {
+    logToDebug(`PROMISE REJECT: ${event.reason}`);
+};
 
 // Request Modal Elements
 const requestModal = document.getElementById('request-modal');
@@ -65,16 +85,24 @@ function safeCreateIcons() {
 }
 
 async function init() {
-    logToDebug('Initializing app...');
+    logToDebug('Init start');
     if (totalGamesCount) {
         totalGamesCount.textContent = 'Loading...';
         totalGamesCount.style.color = '#f97316';
     }
     try {
+        logToDebug('Applying theme...');
         applyTheme(currentTheme, false);
         
+        logToDebug('Testing API...');
         // Test API
-        fetch('/api/test').then(r => r.json()).then(d => console.log('API Test:', d)).catch(e => console.error('API Test Failed:', e));
+        fetch('/api/test').then(r => r.json()).then(d => {
+            logToDebug('API Test OK');
+            console.log('API Test:', d);
+        }).catch(e => {
+            logToDebug('API Test FAIL');
+            console.error('API Test Failed:', e);
+        });
         
         logToDebug('Fetching games...');
         let response = await fetch(`/api/games?t=${Date.now()}`);
@@ -111,6 +139,7 @@ async function init() {
         }
         safeCreateIcons();
     } catch (error) {
+        logToDebug(`INIT ERROR: ${error.message}`);
         console.error('Initialization error:', error);
         // Fallback game for debugging
         if (games.length === 0) {
