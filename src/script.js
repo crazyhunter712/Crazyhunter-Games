@@ -11,6 +11,7 @@ let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 let totalPlaytime = parseInt(localStorage.getItem('crazyhunter_playtime') || '0'); // in seconds
 let sessionStartTime = null;
 let gamesPlayed = JSON.parse(localStorage.getItem('crazyhunter_played_games') || '[]');
+let currentUsername = localStorage.getItem('crazyhunter_username') || null;
 
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
@@ -59,9 +60,18 @@ const closeProfileModal = document.getElementById('close-profile-modal');
 const totalPlaytimeDisplay = document.getElementById('total-playtime');
 const profileGamesPlayed = document.getElementById('profile-games-played');
 const profileReviewsLeft = document.getElementById('profile-reviews-left');
+const usernameInput = document.getElementById('username-input');
+const syncBtn = document.getElementById('sync-btn');
+const profileUsernameDisplay = document.getElementById('profile-username-display');
 
 async function init() {
     applyTheme(currentTheme);
+    
+    // Initial sync if username exists
+    if (currentUsername) {
+        await syncProfile(currentUsername);
+    }
+
     try {
         const response = await fetch('./src/games.json');
         if (!response.ok) throw new Error('Failed to fetch games');
@@ -635,11 +645,68 @@ function updateProfileStats() {
     
     totalPlaytimeDisplay.textContent = formatPlaytime(currentTotal);
     profileGamesPlayed.textContent = gamesPlayed.length;
+    profileUsernameDisplay.textContent = currentUsername || 'Guest Hunter';
+    if (usernameInput) usernameInput.value = currentUsername || '';
     
     // Count user reviews (from local userRatings as a proxy or just count them)
     const reviewCount = Object.keys(userRatings).length;
     profileReviewsLeft.textContent = reviewCount;
 }
+
+async function syncProfile(username) {
+    if (!username) return;
+    
+    try {
+        // 1. Fetch current profile from server
+        const response = await fetch(`/api/profile/${username}`);
+        if (!response.ok) throw new Error('Failed to fetch profile');
+        const serverProfile = await response.json();
+
+        // 2. Merge logic: For now, we'll take the larger playtime and merge arrays
+        // In a real app, you'd have more complex conflict resolution
+        totalPlaytime = Math.max(totalPlaytime, serverProfile.playtime || 0);
+        favorites = Array.from(new Set([...favorites, ...(serverProfile.favorites || [])]));
+        gamesPlayed = Array.from(new Set([...gamesPlayed, ...(serverProfile.playedGames || [])]));
+        userRatings = { ...serverProfile.ratings, ...userRatings };
+
+        // 3. Save merged data back to server
+        await fetch(`/api/profile/${username}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playtime: totalPlaytime,
+                favorites,
+                playedGames: gamesPlayed,
+                ratings: userRatings
+            })
+        });
+
+        // 4. Update local storage
+        currentUsername = username;
+        localStorage.setItem('crazyhunter_username', username);
+        localStorage.setItem('crazyhunter_playtime', totalPlaytime.toString());
+        localStorage.setItem('crazyhunter_favorites', JSON.stringify(favorites));
+        localStorage.setItem('crazyhunter_played_games', JSON.stringify(gamesPlayed));
+        localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
+
+        updateProfileStats();
+        renderGames();
+        renderFavorites();
+    } catch (error) {
+        console.error('Sync error:', error);
+    }
+}
+
+syncBtn.addEventListener('click', async () => {
+    const username = usernameInput.value.trim();
+    if (username) {
+        syncBtn.disabled = true;
+        syncBtn.textContent = 'Syncing...';
+        await syncProfile(username);
+        syncBtn.disabled = false;
+        syncBtn.textContent = 'Sync';
+    }
+});
 
 profileBtn.addEventListener('click', () => {
     updateProfileStats();
@@ -656,11 +723,27 @@ profileModal.addEventListener('click', (e) => {
 });
 
 // Auto-save playtime periodically if game is open
-setInterval(() => {
+setInterval(async () => {
     if (sessionStartTime && selectedGame) {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
         const tempTotal = totalPlaytime + sessionDuration;
         localStorage.setItem('crazyhunter_playtime', tempTotal.toString());
+        
+        // Also sync to server if logged in
+        if (currentUsername) {
+            try {
+                await fetch(`/api/profile/${currentUsername}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playtime: tempTotal,
+                        favorites,
+                        playedGames: gamesPlayed,
+                        ratings: userRatings
+                    })
+                });
+            } catch (e) { console.error('Auto-sync failed', e); }
+        }
     }
 }, 30000); // Every 30 seconds
 

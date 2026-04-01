@@ -359,11 +359,28 @@
                         <i data-lucide="shield-check" class="w-4 h-4 text-black"></i>
                     </div>
                 </div>
-                <h3 class="text-2xl font-bold tracking-tight">Crazy Hunter</h3>
+                <h3 id="profile-username-display" class="text-2xl font-bold tracking-tight">Guest Hunter</h3>
                 <p class="text-white/40 text-sm">Elite Hub Member</p>
             </div>
             
             <div class="p-6 space-y-6">
+                <!-- Username Sync -->
+                <div id="username-sync-section" class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Sync Account (Username)</label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="username-input" 
+                            placeholder="Enter username..."
+                            class="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-4 text-sm focus:outline-none focus:border-primary transition-all"
+                        />
+                        <button id="sync-btn" class="px-4 py-2 bg-primary hover:bg-primary-dark text-black text-xs font-bold rounded-xl transition-all">
+                            Sync
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-white/20 mt-2 italic">Enter a name to save your stats across devices.</p>
+                </div>
+
                 <!-- Playtime Stat -->
                 <div class="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-between group hover:border-primary/30 transition-all">
                     <div class="flex items-center gap-4">
