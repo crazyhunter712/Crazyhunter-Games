@@ -329,6 +329,65 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Comments Section -->
+            <div class="mt-12 border-t border-white/10 pt-12 max-w-4xl">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-primary/10 rounded-lg border border-primary/20">
+                            <i data-lucide="message-square" class="w-6 h-6 text-primary"></i>
+                        </div>
+                        <h3 class="text-3xl font-bold">Community Comments</h3>
+                    </div>
+                    <span id="comment-count" class="px-3 py-1 bg-white/5 rounded-full text-sm font-medium text-white/40 border border-white/10">0 Comments</span>
+                </div>
+
+                <!-- Comment Form -->
+                <div class="bg-white/5 border border-white/10 rounded-3xl p-6 mb-12">
+                    <form id="comment-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-white/40 mb-1.5">Your Name</label>
+                                <input 
+                                    type="text" 
+                                    id="comment-author" 
+                                    required 
+                                    placeholder="Enter your name..."
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-primary transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-white/40 mb-1.5">Rating</label>
+                                <div class="flex gap-2 h-[50px] items-center">
+                                    <input type="hidden" id="comment-rating-val" value="5">
+                                    <div id="comment-stars" class="flex gap-1">
+                                        <!-- Stars injected here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-white/40 mb-1.5">Your Comment</label>
+                            <textarea 
+                                id="comment-text" 
+                                required 
+                                rows="3"
+                                placeholder="What do you think of this game?"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-primary transition-all resize-none"
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="px-8 py-3 bg-primary hover:bg-primary-dark text-black font-bold rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-primary/20">
+                            <span>Post Comment</span>
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Comments List -->
+                <div id="comments-list" class="space-y-6">
+                    <!-- Comments will be injected here -->
+                </div>
+            </div>
         </div>
     </main>
 
@@ -396,7 +455,62 @@
         </div>
     </div>
 
-    <script src="src/script.js"></script>
+    <!-- Hunter AI Chat Assistant -->
+    <div id="ai-chat-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        <!-- Chat Window -->
+        <div id="ai-chat-window" class="hidden w-[350px] sm:w-[400px] h-[500px] bg-[#121212] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-300 scale-95 opacity-0 origin-bottom-right">
+            <!-- Header -->
+            <div class="p-5 bg-gradient-to-r from-primary to-primary-dark flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                        <i data-lucide="bot" class="w-6 h-6 text-black"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-black font-black uppercase tracking-tighter text-lg leading-none">Hunter AI</h3>
+                        <span class="text-[10px] text-black/60 font-bold uppercase tracking-widest">Online Assistant</span>
+                    </div>
+                </div>
+                <button id="close-chat" class="p-2 hover:bg-black/10 rounded-xl transition-colors">
+                    <i data-lucide="minus" class="w-5 h-5 text-black"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="bot" class="w-4 h-4 text-primary"></i>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/80 leading-relaxed">
+                        Hey there! I'm **Hunter AI**. Looking for a specific game or need a recommendation? I know everything about the Hub!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 border-t border-white/10 bg-white/[0.02]">
+                <form id="chat-form" class="relative">
+                    <input 
+                        type="text" 
+                        id="chat-input"
+                        placeholder="Ask Hunter AI..."
+                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-4 pr-12 focus:outline-none focus:border-primary transition-all text-sm"
+                    />
+                    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:scale-110 transition-transform">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toggle Button -->
+        <button id="toggle-chat" class="w-16 h-16 bg-primary hover:bg-primary-dark text-black rounded-2xl shadow-2xl shadow-primary/20 flex items-center justify-center transition-all hover:scale-110 active:scale-95 group">
+            <i data-lucide="bot" class="w-8 h-8 group-hover:rotate-12 transition-transform"></i>
+            <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0a0a0a] rounded-full"></div>
+        </button>
+    </div>
+
+    <script type="module" src="src/script.js"></script>
 </body>
 </html>
 
