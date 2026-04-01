@@ -7,6 +7,11 @@ let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}'
 let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
 let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 
+// Playtime Tracking
+let totalPlaytime = parseInt(localStorage.getItem('crazyhunter_playtime') || '0'); // in seconds
+let sessionStartTime = null;
+let gamesPlayed = JSON.parse(localStorage.getItem('crazyhunter_played_games') || '[]');
+
 const themes = {
     orange: { primary: '#f97316', dark: '#ea580c' },
     blue: { primary: '#3b82f6', dark: '#2563eb' },
@@ -41,6 +46,19 @@ const closeRequestModal = document.getElementById('close-request-modal');
 const requestForm = document.getElementById('request-form');
 const requestSuccess = document.getElementById('request-success');
 const resetRequest = document.getElementById('reset-request');
+
+// Comments Elements
+const commentsList = document.getElementById('comments-list');
+const commentForm = document.getElementById('comment-form');
+const commentsCount = document.getElementById('comments-count');
+
+// Profile Elements
+const profileBtn = document.getElementById('profile-btn');
+const profileModal = document.getElementById('profile-modal');
+const closeProfileModal = document.getElementById('close-profile-modal');
+const totalPlaytimeDisplay = document.getElementById('total-playtime');
+const profileGamesPlayed = document.getElementById('profile-games-played');
+const profileReviewsLeft = document.getElementById('profile-reviews-left');
 
 async function init() {
     applyTheme(currentTheme);
@@ -266,6 +284,13 @@ function openGame(game) {
 
     gameIframe.src = game.iframeUrl;
     
+    // Start playtime tracking
+    sessionStartTime = Date.now();
+    if (!gamesPlayed.includes(game.id)) {
+        gamesPlayed.push(game.id);
+        localStorage.setItem('crazyhunter_played_games', JSON.stringify(gamesPlayed));
+    }
+
     // Handle iframe load
     gameIframe.onload = () => {
         clearInterval(interval);
@@ -361,10 +386,63 @@ function openGame(game) {
     mainContainer.classList.remove('max-w-7xl');
     mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Load comments
+    loadComments(game.id);
+
     lucide.createIcons();
 }
 
-window.rateGame = function(gameId, rating) {
+async function loadComments(gameId) {
+    try {
+        const response = await fetch(`/api/comments/${gameId}`);
+        if (!response.ok) throw new Error('Failed to fetch comments');
+        const comments = await response.json();
+        renderComments(comments);
+    } catch (error) {
+        console.error('Error loading comments:', error);
+    }
+}
+
+function renderComments(comments) {
+    commentsCount.textContent = `${comments.length} Review${comments.length !== 1 ? 's' : ''}`;
+    
+    if (comments.length === 0) {
+        commentsList.innerHTML = `
+            <div class="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                <p class="text-white/40">No reviews yet. Be the first to leave one!</p>
+            </div>
+        `;
+        return;
+    }
+
+    commentsList.innerHTML = comments.map(comment => `
+        <div class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:bg-white/10 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
+                        ${comment.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h5 class="font-bold">${comment.author}</h5>
+                        <p class="text-xs text-white/40">${new Date(comment.date).toLocaleDateString()}</p>
+                    </div>
+                </div>
+                ${comment.rating > 0 ? `
+                    <div class="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg border border-primary/20">
+                        <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
+                        <span class="text-xs font-bold text-primary">${comment.rating}</span>
+                    </div>
+                ` : ''}
+            </div>
+            <p class="text-white/70 leading-relaxed">${comment.text}</p>
+        </div>
+    `).join('');
+    
+    lucide.createIcons();
+}
+
+window.rateGame = async function(gameId, rating) {
     userRatings[gameId] = rating;
     localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
     
@@ -375,6 +453,14 @@ window.rateGame = function(gameId, rating) {
 };
 
 function closeGame() {
+    // Save playtime
+    if (sessionStartTime) {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
+        totalPlaytime += sessionDuration;
+        localStorage.setItem('crazyhunter_playtime', totalPlaytime.toString());
+        sessionStartTime = null;
+    }
+
     selectedGame = null;
     gameIframe.src = '';
     
@@ -469,6 +555,42 @@ backButton.addEventListener('click', closeGame);
 closeButton.addEventListener('click', closeGame);
 fullscreenButton.addEventListener('click', toggleFullscreen);
 
+if (commentForm) {
+    commentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedGame) return;
+
+        const authorInput = document.getElementById('comment-author');
+        const textInput = document.getElementById('comment-text');
+        
+        const commentData = {
+            gameId: selectedGame.id,
+            author: authorInput.value,
+            text: textInput.value,
+            rating: userRatings[selectedGame.id] || 0
+        };
+
+        try {
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(commentData)
+            });
+
+            if (!response.ok) throw new Error('Failed to post comment');
+            
+            // Refresh comments
+            loadComments(selectedGame.id);
+            
+            // Reset form
+            textInput.value = '';
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            alert('Failed to post review. Please try again.');
+        }
+    });
+}
+
 const openNewTabBtn = document.getElementById('open-new-tab');
 if (openNewTabBtn) {
     openNewTabBtn.addEventListener('click', () => {
@@ -496,6 +618,51 @@ function applyTheme(themeName) {
     renderGames();
     renderFavorites();
 }
+
+// Profile Logic
+function formatPlaytime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+}
+
+function updateProfileStats() {
+    // Calculate current session if active
+    let currentTotal = totalPlaytime;
+    if (sessionStartTime) {
+        currentTotal += Math.floor((Date.now() - sessionStartTime) / 1000);
+    }
+    
+    totalPlaytimeDisplay.textContent = formatPlaytime(currentTotal);
+    profileGamesPlayed.textContent = gamesPlayed.length;
+    
+    // Count user reviews (from local userRatings as a proxy or just count them)
+    const reviewCount = Object.keys(userRatings).length;
+    profileReviewsLeft.textContent = reviewCount;
+}
+
+profileBtn.addEventListener('click', () => {
+    updateProfileStats();
+    profileModal.classList.remove('hidden');
+    lucide.createIcons();
+});
+
+closeProfileModal.addEventListener('click', () => {
+    profileModal.classList.add('hidden');
+});
+
+profileModal.addEventListener('click', (e) => {
+    if (e.target === profileModal) profileModal.classList.add('hidden');
+});
+
+// Auto-save playtime periodically if game is open
+setInterval(() => {
+    if (sessionStartTime && selectedGame) {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const tempTotal = totalPlaytime + sessionDuration;
+        localStorage.setItem('crazyhunter_playtime', tempTotal.toString());
+    }
+}, 30000); // Every 30 seconds
 
 // Initialize
 init();

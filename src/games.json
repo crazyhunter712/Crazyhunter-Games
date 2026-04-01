@@ -154,17 +154,5 @@
     "plays": "540K",
     "avgPlayTime": "9m 15s",
     "highScore": "Champion"
-  },
-  {
-    "id": "kill-donald-skunk",
-    "title": "Kill Donald Skunk",
-    "description": "A fast-paced action game where you take down the skunk! Use your skills to survive and score high.",
-    "thumbnail": "https://picsum.photos/seed/skunk/480/270",
-    "iframeUrl": "https://games.wixgames.co.uk/games/killdonaldskunk/webgl",
-    "baseRating": 4.5,
-    "ratingCount": 320,
-    "plays": "150K",
-    "avgPlayTime": "6m 30s",
-    "highScore": "25,000"
   }
 ]
