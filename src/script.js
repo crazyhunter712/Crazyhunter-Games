@@ -48,26 +48,39 @@ const commentsList = document.getElementById('comments-list');
 const commentForm = document.getElementById('comment-form');
 const commentsCount = document.getElementById('comments-count');
 
-async function init() {
-    applyTheme(currentTheme);
-    
-    const response = await fetch('./src/games.json');
-    if (!response.ok) throw new Error('Failed to fetch games');
-    games = await response.json();
-    filteredGames = [...games];
-    renderGames();
-    renderFavorites();
-
-    // Check for shared game in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedGameId = urlParams.get('game');
-    if (sharedGameId) {
-        const sharedGame = games.find(g => g.id === sharedGameId);
-        if (sharedGame) {
-            setTimeout(() => openGame(sharedGame), 500);
-        }
+function safeCreateIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
     }
-    lucide.createIcons();
+}
+
+async function init() {
+    try {
+        applyTheme(currentTheme, false);
+        
+        const response = await fetch('/src/games.json');
+        if (!response.ok) throw new Error('Failed to fetch games');
+        games = await response.json();
+        filteredGames = [...games];
+        renderGames();
+        renderFavorites();
+
+        // Check for shared game in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedGameId = urlParams.get('game');
+        if (sharedGameId) {
+            const sharedGame = games.find(g => g.id === sharedGameId);
+            if (sharedGame) {
+                setTimeout(() => openGame(sharedGame), 500);
+            }
+        }
+        safeCreateIcons();
+    } catch (error) {
+        console.error('Initialization error:', error);
+        // Fallback: render empty state if fetch fails
+        renderGames();
+        renderFavorites();
+    }
 }
 
 function getAverageRating(game) {
@@ -80,8 +93,11 @@ function getAverageRating(game) {
 }
 
 function renderGames() {
+    if (!gamesGrid) return;
     gamesGrid.innerHTML = '';
-    totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
+    if (totalGamesCount) {
+        totalGamesCount.textContent = `${filteredGames.length} Game${filteredGames.length !== 1 ? 's' : ''}`;
+    }
     
     if (filteredGames.length === 0) {
         gamesGrid.innerHTML = `
@@ -93,7 +109,7 @@ function renderGames() {
                 <p class="text-white/40">Try searching for something else.</p>
             </div>
         `;
-        lucide.createIcons();
+        safeCreateIcons();
         return;
     }
 
@@ -146,19 +162,22 @@ function renderGames() {
         gamesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 function renderFavorites() {
+    if (!favoritesGrid) return;
     const favoriteGames = games.filter(game => favorites.includes(game.id));
-    favoritesCount.textContent = `${favoriteGames.length} Game${favoriteGames.length !== 1 ? 's' : ''}`;
+    if (favoritesCount) {
+        favoritesCount.textContent = `${favoriteGames.length} Game${favoriteGames.length !== 1 ? 's' : ''}`;
+    }
     
     if (favoriteGames.length === 0) {
-        favoritesSection.classList.add('hidden');
+        if (favoritesSection) favoritesSection.classList.add('hidden');
         return;
     }
 
-    favoritesSection.classList.remove('hidden');
+    if (favoritesSection) favoritesSection.classList.remove('hidden');
     favoritesGrid.innerHTML = '';
 
     favoriteGames.forEach(game => {
@@ -204,7 +223,7 @@ function renderFavorites() {
         favoritesGrid.appendChild(card);
     });
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 window.toggleFavorite = function(gameId) {
@@ -271,21 +290,23 @@ function openGame(game) {
     gameIframe.src = game.iframeUrl;
     
     // Handle iframe load
-    gameIframe.onload = () => {
-        clearInterval(interval);
-        if (loadingBar) loadingBar.style.width = '100%';
-        
-        setTimeout(() => {
-            if (loadingOverlay) {
-                loadingOverlay.classList.add('opacity-0', 'invisible');
-                loadingOverlay.classList.remove('opacity-100', 'visible');
-            }
-        }, 500);
-    };
+    if (gameIframe) {
+        gameIframe.onload = () => {
+            clearInterval(interval);
+            if (loadingBar) loadingBar.style.width = '100%';
+            
+            setTimeout(() => {
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('opacity-0', 'invisible');
+                    loadingOverlay.classList.remove('opacity-100', 'visible');
+                }
+            }, 500);
+        };
+    }
 
-    gameTitle.textContent = game.title;
-    aboutTitle.textContent = `About ${game.title}`;
-    aboutDescription.textContent = game.description;
+    if (gameTitle) gameTitle.textContent = game.title;
+    if (aboutTitle) aboutTitle.textContent = `About ${game.title}`;
+    if (aboutDescription) aboutDescription.textContent = game.description;
     
     // Inject stats interface
     const statsContainer = document.createElement('div');
@@ -357,19 +378,24 @@ function openGame(game) {
     ratingContainer.id = 'game-rating-ui';
     
     const infoPanel = document.querySelector('#game-info .flex-1');
-    infoPanel.appendChild(statsContainer);
-    infoPanel.appendChild(ratingContainer);
+    if (infoPanel) {
+        infoPanel.appendChild(statsContainer);
+        infoPanel.appendChild(ratingContainer);
+    }
     
-    document.getElementById('grid-view').classList.add('hidden');
-    gamePlay.classList.remove('hidden');
-    mainContainer.classList.remove('max-w-7xl');
-    mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
+    const gridView = document.getElementById('grid-view');
+    if (gridView) gridView.classList.add('hidden');
+    if (gamePlay) gamePlay.classList.remove('hidden');
+    if (mainContainer) {
+        mainContainer.classList.remove('max-w-7xl');
+        mainContainer.classList.add('max-w-none', 'px-0', 'sm:px-4');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     // Load comments
     loadComments(game.id);
 
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 async function loadComments(gameId) {
@@ -384,8 +410,12 @@ async function loadComments(gameId) {
 }
 
 function renderComments(comments) {
-    commentsCount.textContent = `${comments.length} Review${comments.length !== 1 ? 's' : ''}`;
+    if (commentsCount) {
+        commentsCount.textContent = `${comments.length} Review${comments.length !== 1 ? 's' : ''}`;
+    }
     
+    if (!commentsList) return;
+
     if (comments.length === 0) {
         commentsList.innerHTML = `
             <div class="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
@@ -418,7 +448,7 @@ function renderComments(comments) {
         </div>
     `).join('');
     
-    lucide.createIcons();
+    safeCreateIcons();
 }
 
 window.rateGame = async function(gameId, rating) {
@@ -433,7 +463,7 @@ window.rateGame = async function(gameId, rating) {
 
 function closeGame() {
     selectedGame = null;
-    gameIframe.src = '';
+    if (gameIframe) gameIframe.src = '';
     
     // Reset loading state
     if (loadingOverlay) {
@@ -442,10 +472,13 @@ function closeGame() {
     }
     if (loadingBar) loadingBar.style.width = '0%';
 
-    document.getElementById('grid-view').classList.remove('hidden');
-    gamePlay.classList.add('hidden');
-    mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
-    mainContainer.classList.add('max-w-7xl');
+    const gridView = document.getElementById('grid-view');
+    if (gridView) gridView.classList.remove('hidden');
+    if (gamePlay) gamePlay.classList.add('hidden');
+    if (mainContainer) {
+        mainContainer.classList.remove('max-w-none', 'px-0', 'sm:px-4');
+        mainContainer.classList.add('max-w-7xl');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     renderGames(); // Refresh grid to show new ratings
 }
@@ -480,7 +513,7 @@ document.addEventListener('fullscreenchange', () => {
         iframeContainer.classList.add('rounded-3xl', 'aspect-video');
         fullscreenButton.innerHTML = '<i data-lucide="maximize-2" class="w-5 h-5"></i>';
     }
-    lucide.createIcons();
+    safeCreateIcons();
 });
 
 // Modal Logic
@@ -489,7 +522,7 @@ if (requestGameBtn) {
         requestModal.classList.remove('hidden');
         requestForm.classList.remove('hidden');
         requestSuccess.classList.add('hidden');
-        lucide.createIcons();
+        safeCreateIcons();
     });
 }
 
@@ -518,7 +551,7 @@ if (requestForm) {
         
         requestForm.classList.add('hidden');
         requestSuccess.classList.remove('hidden');
-        lucide.createIcons();
+        safeCreateIcons();
     });
 }
 
@@ -527,14 +560,14 @@ if (resetRequest) {
         requestForm.reset();
         requestForm.classList.remove('hidden');
         requestSuccess.classList.add('hidden');
-        lucide.createIcons();
+        safeCreateIcons();
     });
 }
 
-searchInput.addEventListener('input', handleSearch);
-backButton.addEventListener('click', closeGame);
-closeButton.addEventListener('click', closeGame);
-fullscreenButton.addEventListener('click', toggleFullscreen);
+if (searchInput) searchInput.addEventListener('input', handleSearch);
+if (backButton) backButton.addEventListener('click', closeGame);
+if (closeButton) closeButton.addEventListener('click', closeGame);
+if (fullscreenButton) fullscreenButton.addEventListener('click', toggleFullscreen);
 
 if (commentForm) {
     commentForm.addEventListener('submit', async (e) => {
@@ -588,17 +621,23 @@ window.setTheme = function(themeName) {
     applyTheme(themeName);
 };
 
-function applyTheme(themeName) {
+function applyTheme(themeName, shouldRender = true) {
     const theme = themes[themeName];
+    if (!theme) return;
     document.documentElement.style.setProperty('--primary-color', theme.primary);
     document.documentElement.style.setProperty('--primary-color-dark', theme.dark);
     
     const dot = document.getElementById('current-theme-dot');
     if (dot) dot.style.backgroundColor = theme.primary;
     
-    renderGames();
-    renderFavorites();
+    if (shouldRender) {
+        renderGames();
+        renderFavorites();
+    }
 }
 
 // Initialize
-init();
+window.addEventListener('DOMContentLoaded', () => {
+    init();
+    safeCreateIcons();
+});
