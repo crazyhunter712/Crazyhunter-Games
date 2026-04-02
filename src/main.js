@@ -14,9 +14,14 @@ const defaultProfile = {
     avatar: "Guest",
     xp: 0,
     level: 1,
+    coins: 50,
     unlockedBorders: ["none"],
     selectedBorder: "none",
-    unlockedAvatars: []
+    unlockedAvatars: [],
+    unlockedGlows: ["none"],
+    selectedGlow: "none",
+    unlockedEntryEffects: ["none"],
+    selectedEntryEffect: "none"
 };
 let userProfile = { ...defaultProfile, ...JSON.parse(localStorage.getItem('crazyhunter_profile') || '{}') };
 
@@ -35,6 +40,23 @@ userAchievements.stats = { ...defaultAchievements.stats, ...userAchievements.sta
 
 const LEVEL_XP_BASE = 100;
 const LEVEL_XP_MULTIPLIER = 1.5;
+
+const SHOP_ITEMS = {
+    glows: {
+        'none': { name: 'None', price: 0, class: '' },
+        'orange': { name: 'Orange Glow', price: 50, class: 'shadow-[0_0_15px_#f97316] border-[#f97316]' },
+        'blue': { name: 'Blue Glow', price: 50, class: 'shadow-[0_0_15px_#3b82f6] border-[#3b82f6]' },
+        'purple': { name: 'Purple Glow', price: 75, class: 'shadow-[0_0_20px_#a855f7] border-[#a855f7]' },
+        'rainbow': { name: 'Rainbow Glow', price: 200, class: 'animate-rainbow-border shadow-[0_0_25px_rgba(255,255,255,0.5)]' }
+    },
+    effects: {
+        'none': { name: 'None', price: 0, class: '' },
+        'flash': { name: 'White Flash', price: 100, class: 'animate-entry-flash' },
+        'zoom': { name: 'Zoom In', price: 150, class: 'animate-entry-zoom' },
+        'slide': { name: 'Slide Down', price: 150, class: 'animate-entry-slide' },
+        'glitch': { name: 'Glitch', price: 300, class: 'animate-entry-glitch' }
+    }
+};
 
 const BORDERS = {
     'none': { name: 'None', class: '' },
@@ -110,6 +132,145 @@ const headerOpenNewTab = document.getElementById('header-open-new-tab');
 let deferredPrompt;
 let playTimeInterval = null;
 
+// Shop Elements
+const shopTrigger = document.getElementById('shop-trigger');
+const shopModal = document.getElementById('shop-modal');
+const shopModalContent = document.getElementById('shop-modal-content');
+const closeShopBtn = document.getElementById('close-shop-btn');
+const shopCoinsDisplay = document.getElementById('shop-coins-display');
+const headerCoins = document.getElementById('header-coins');
+const shopItemsGrid = document.getElementById('shop-items-grid');
+const shopTabGlows = document.getElementById('shop-tab-glows');
+const shopTabEffects = document.getElementById('shop-tab-effects');
+
+let currentShopTab = 'glows';
+
+function updateCoinDisplays() {
+    if (headerCoins) headerCoins.textContent = userProfile.coins;
+    if (shopCoinsDisplay) shopCoinsDisplay.textContent = `${userProfile.coins} Coins`;
+}
+
+function openShop() {
+    shopModal.classList.remove('invisible', 'opacity-0');
+    shopModalContent.classList.remove('scale-95');
+    renderShop();
+    updateCoinDisplays();
+}
+
+function closeShop() {
+    shopModal.classList.add('invisible', 'opacity-0');
+    shopModalContent.classList.add('scale-95');
+}
+
+function switchShopTab(tab) {
+    currentShopTab = tab;
+    shopTabGlows.className = `flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'glows' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`;
+    shopTabEffects.className = `flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'effects' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`;
+    renderShop();
+}
+
+function renderShop() {
+    shopItemsGrid.innerHTML = '';
+    const items = SHOP_ITEMS[currentShopTab];
+    
+    Object.keys(items).forEach(id => {
+        const item = items[id];
+        const isUnlocked = currentShopTab === 'glows' ? userProfile.unlockedGlows.includes(id) : userProfile.unlockedEntryEffects.includes(id);
+        const isSelected = currentShopTab === 'glows' ? userProfile.selectedGlow === id : userProfile.selectedEntryEffect === id;
+        
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-3xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-white/5 bg-white/5'}`;
+        
+        // Preview for glows
+        let previewHtml = '';
+        if (currentShopTab === 'glows') {
+            previewHtml = `
+                <div class="w-16 h-16 mx-auto mb-4 rounded-xl border-2 overflow-hidden ${item.class}">
+                    <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${userProfile.avatar}" class="w-full h-full object-cover">
+                </div>
+            `;
+        } else {
+            previewHtml = `
+                <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i data-lucide="${id === 'none' ? 'slash' : 'zap'}" class="w-8 h-8 text-primary"></i>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            ${previewHtml}
+            <div class="text-center">
+                <h3 class="font-bold text-sm mb-1">${item.name}</h3>
+                <div class="flex items-center justify-center gap-1 mb-3">
+                    ${isUnlocked ? '<span class="text-[10px] uppercase font-black text-white/20">Unlocked</span>' : `
+                        <i data-lucide="coins" class="w-3 h-3 text-primary"></i>
+                        <span class="text-xs font-black text-primary">${item.price}</span>
+                    `}
+                </div>
+                <button class="w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    isSelected ? 'bg-white/10 text-white/40 cursor-default' : 
+                    isUnlocked ? 'bg-primary text-black hover:scale-105' : 
+                    userProfile.coins >= item.price ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white/5 text-white/20 cursor-not-allowed'
+                }">
+                    ${isSelected ? 'Equipped' : isUnlocked ? 'Equip' : 'Buy Now'}
+                </button>
+            </div>
+        `;
+
+        const btn = card.querySelector('button');
+        btn.onclick = () => {
+            if (isSelected) return;
+            if (isUnlocked) {
+                equipItem(currentShopTab, id);
+            } else if (userProfile.coins >= item.price) {
+                buyItem(currentShopTab, id, item.price);
+            }
+        };
+
+        shopItemsGrid.appendChild(card);
+    });
+    lucide.createIcons();
+}
+
+function buyItem(type, id, price) {
+    userProfile.coins -= price;
+    if (type === 'glows') {
+        userProfile.unlockedGlows.push(id);
+        userProfile.selectedGlow = id;
+    } else {
+        userProfile.unlockedEntryEffects.push(id);
+        userProfile.selectedEntryEffect = id;
+    }
+    localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+    updateCoinDisplays();
+    renderShop();
+    applyProfile();
+}
+
+function equipItem(type, id) {
+    if (type === 'glows') {
+        userProfile.selectedGlow = id;
+    } else {
+        userProfile.selectedEntryEffect = id;
+    }
+    localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+    renderShop();
+    applyProfile();
+}
+
+function playEntryEffect() {
+    const effect = userProfile.selectedEntryEffect;
+    if (effect === 'none') return;
+    
+    const overlay = document.createElement('div');
+    overlay.className = `fixed inset-0 z-[200] pointer-events-none ${SHOP_ITEMS.effects[effect].class}`;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.remove();
+    }, 2000);
+}
+
 // Profile Elements
 const profileTrigger = document.getElementById('profile-trigger');
 const profileModal = document.getElementById('profile-modal');
@@ -166,6 +327,8 @@ async function init() {
     applyProfile();
     renderAvatarGrid();
     checkAchievements(); // Initial check for existing stats
+    updateCoinDisplays();
+    playEntryEffect();
     
     // Register Service Worker
     if ('serviceWorker' in navigator) {
@@ -851,6 +1014,17 @@ saveProfileBtn.addEventListener('click', saveProfile);
 tabProfile.addEventListener('click', () => switchTab('profile'));
 tabBadges.addEventListener('click', () => switchTab('badges'));
 
+// Shop Listeners
+if (shopTrigger) shopTrigger.addEventListener('click', openShop);
+if (closeShopBtn) closeShopBtn.addEventListener('click', closeShop);
+if (shopTabGlows) shopTabGlows.addEventListener('click', () => switchShopTab('glows'));
+if (shopTabEffects) shopTabEffects.addEventListener('click', () => switchShopTab('effects'));
+if (shopModal) {
+    shopModal.addEventListener('click', (e) => {
+        if (e.target === shopModal) closeShop();
+    });
+}
+
 // Mobile Menu Listeners
 mobileMenuTrigger.addEventListener('click', openMobileMenu);
 closeMobileMenu.addEventListener('click', toggleMobileMenu);
@@ -911,9 +1085,15 @@ function unlockAchievement(id) {
     userAchievements.unlocked.push(id);
     const ach = ACHIEVEMENTS[id];
     
+    // Award Coins
+    const coinReward = 50; // Standard reward for achievement
+    userProfile.coins += coinReward;
+    localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+    updateCoinDisplays();
+
     // Show Toast
     toastTitle.textContent = ach.title;
-    toastDesc.textContent = ach.desc;
+    toastDesc.textContent = `${ach.desc} (+${coinReward} Coins)`;
     achievementToast.classList.remove('translate-y-32', 'opacity-0');
     
     setTimeout(() => {
@@ -1028,10 +1208,11 @@ function applyProfile() {
     userProfile.level = level;
     if (headerLevelBadge) headerLevelBadge.textContent = level;
     
-    // Apply Border
+    // Apply Border & Glow
     const border = BORDERS[userProfile.selectedBorder || 'none'];
+    const glow = SHOP_ITEMS.glows[userProfile.selectedGlow || 'none'];
     if (headerAvatarContainer) {
-        headerAvatarContainer.className = `w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border-2 bg-primary/20 relative z-10 ${border.class}`;
+        headerAvatarContainer.className = `w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border-2 bg-primary/20 relative z-10 ${border.class} ${glow.class}`;
     }
     
     // Update Modal Stats

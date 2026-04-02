@@ -52,3 +52,61 @@
 #modal-xp-bar {
     box-shadow: 0 0 10px var(--primary);
 }
+
+/* Shop Animations */
+@keyframes rainbow-border {
+    0% { border-color: #f97316; box-shadow: 0 0 15px #f97316; }
+    25% { border-color: #3b82f6; box-shadow: 0 0 15px #3b82f6; }
+    50% { border-color: #a855f7; box-shadow: 0 0 15px #a855f7; }
+    75% { border-color: #22c55e; box-shadow: 0 0 15px #22c55e; }
+    100% { border-color: #f97316; box-shadow: 0 0 15px #f97316; }
+}
+
+.animate-rainbow-border {
+    animation: rainbow-border 4s linear infinite;
+}
+
+/* Entry Effects */
+.animate-entry-flash {
+    background: white;
+    animation: entry-flash 1.5s ease-out forwards;
+}
+
+@keyframes entry-flash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.animate-entry-zoom {
+    background: radial-gradient(circle, transparent 0%, black 100%);
+    animation: entry-zoom 2s ease-out forwards;
+}
+
+@keyframes entry-zoom {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.animate-entry-slide {
+    background: linear-gradient(to bottom, var(--primary-color) 0%, transparent 100%);
+    animation: entry-slide 1.5s ease-out forwards;
+}
+
+@keyframes entry-slide {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.animate-entry-glitch {
+    background: rgba(255, 255, 255, 0.1);
+    animation: entry-glitch 0.5s steps(5) infinite;
+}
+
+@keyframes entry-glitch {
+    0% { clip-path: inset(10% 0 30% 0); transform: translate(-5px, -5px); }
+    20% { clip-path: inset(40% 0 10% 0); transform: translate(5px, 5px); }
+    40% { clip-path: inset(20% 0 50% 0); transform: translate(-5px, 0); }
+    60% { clip-path: inset(60% 0 20% 0); transform: translate(5px, -5px); }
+    80% { clip-path: inset(30% 0 60% 0); transform: translate(0, 5px); }
+    100% { clip-path: inset(10% 0 30% 0); transform: translate(-5px, -5px); }
+}
