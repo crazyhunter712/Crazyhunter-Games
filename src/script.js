@@ -728,7 +728,7 @@ async function postComment(e) {
         }
     } catch (error) {
         console.error('Network error posting comment:', error);
-        alert('Failed to post comment. Please check your connection.');
+        alert(`Failed to post comment. Error: ${error.message}. Check console for details.`);
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
