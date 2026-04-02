@@ -1,8 +1,8 @@
-const CACHE_NAME = 'crazyhunter-cache-v3';
+const CACHE_NAME = 'crazyhunter-cache-v5';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/src/script.js',
+  '/src/main.js',
   '/src/index.css',
   '/src/games.json'
 ];

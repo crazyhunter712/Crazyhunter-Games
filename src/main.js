@@ -77,7 +77,7 @@ async function init() {
     // Register Service Worker
     if ('serviceWorker' in navigator) {
         const registerSW = () => {
-            navigator.serviceWorker.register('/sw.js')
+            navigator.serviceWorker.register('/sw.js?v=5')
                 .then(registration => console.log('SW registered:', registration))
                 .catch(error => console.log('SW registration failed:', error));
         };
