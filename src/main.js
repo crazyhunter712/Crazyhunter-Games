@@ -7,6 +7,7 @@ let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}'
 let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
 let recentGames = JSON.parse(localStorage.getItem('crazyhunter_recent') || '[]');
 let personalScores = JSON.parse(localStorage.getItem('crazyhunter_scores') || '{}');
+let userProfile = JSON.parse(localStorage.getItem('crazyhunter_profile') || '{"nickname": "Guest", "avatar": "Guest"}');
 let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 let currentCategory = 'all';
 let currentSort = 'default';
@@ -60,6 +61,17 @@ const closePwaBtn = document.getElementById('close-pwa-btn');
 const headerOpenNewTab = document.getElementById('header-open-new-tab');
 let deferredPrompt;
 
+// Profile Elements
+const profileTrigger = document.getElementById('profile-trigger');
+const profileModal = document.getElementById('profile-modal');
+const profileModalContent = document.getElementById('profile-modal-content');
+const closeProfileBtn = document.getElementById('close-profile-btn');
+const saveProfileBtn = document.getElementById('save-profile-btn');
+const nicknameInput = document.getElementById('profile-nickname-input');
+const avatarGrid = document.getElementById('avatar-grid');
+const headerAvatar = document.getElementById('header-avatar');
+const headerNickname = document.getElementById('header-nickname');
+
 const mainContainer = document.getElementById('main-container');
 
 // Request Modal Elements
@@ -73,6 +85,8 @@ const randomGameBtn = document.getElementById('random-game-btn');
 
 async function init() {
     applyTheme(currentTheme);
+    applyProfile();
+    renderAvatarGrid();
     
     // Register Service Worker
     if ('serviceWorker' in navigator) {
@@ -717,6 +731,13 @@ backButton.addEventListener('click', closeGame);
 closeButton.addEventListener('click', closeGame);
 fullscreenButton.addEventListener('click', toggleFullscreen);
 
+profileTrigger.addEventListener('click', openProfile);
+closeProfileBtn.addEventListener('click', closeProfile);
+saveProfileBtn.addEventListener('click', saveProfile);
+profileModal.addEventListener('click', (e) => {
+    if (e.target === profileModal) closeProfile();
+});
+
 const openNewTabBtn = document.getElementById('open-new-tab');
 if (openNewTabBtn) {
     openNewTabBtn.addEventListener('click', () => {
@@ -724,6 +745,64 @@ if (openNewTabBtn) {
             window.open(selectedGame.iframeUrl, '_blank');
         }
     });
+}
+
+// Profile Logic
+const avatarSeeds = [
+    'Guest', 'Felix', 'Jack', 'Luna', 'Oliver', 'Milo', 'Leo', 'Max', 'Charlie', 'Simba',
+    'Shadow', 'Jasper', 'Toby', 'Rocky', 'Bear', 'Duke', 'Cooper', 'Riley', 'Bailey', 'Zoe'
+];
+
+function renderAvatarGrid() {
+    avatarGrid.innerHTML = '';
+    avatarSeeds.forEach(seed => {
+        const url = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
+        const btn = document.createElement('button');
+        btn.className = `aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${userProfile.avatar === seed ? 'border-primary bg-primary/10' : 'border-white/5 bg-white/5'}`;
+        btn.innerHTML = `<img src="${url}" alt="${seed}" class="w-full h-full object-cover">`;
+        btn.onclick = () => {
+            userProfile.avatar = seed;
+            renderAvatarGrid();
+        };
+        avatarGrid.appendChild(btn);
+    });
+}
+
+function applyProfile() {
+    headerNickname.textContent = userProfile.nickname;
+    headerAvatar.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${userProfile.avatar}`;
+    nicknameInput.value = userProfile.nickname;
+}
+
+function openProfile() {
+    profileModal.classList.remove('hidden');
+    setTimeout(() => {
+        profileModal.classList.remove('opacity-0');
+        profileModalContent.classList.remove('scale-95');
+    }, 10);
+    renderAvatarGrid();
+}
+
+function closeProfile() {
+    profileModal.classList.add('opacity-0');
+    profileModalContent.classList.add('scale-95');
+    setTimeout(() => {
+        profileModal.classList.add('hidden');
+    }, 300);
+}
+
+function saveProfile() {
+    const newNickname = nicknameInput.value.trim();
+    if (newNickname) {
+        userProfile.nickname = newNickname;
+        localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+        applyProfile();
+        closeProfile();
+        
+        // Visual feedback
+        saveProfileBtn.classList.add('bg-green-500');
+        setTimeout(() => saveProfileBtn.classList.remove('bg-green-500'), 1000);
+    }
 }
 
 // Theme Logic
