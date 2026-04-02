@@ -381,7 +381,7 @@ window.shareGame = async function(gameId) {
 
     const shareUrl = `${window.location.origin}${window.location.pathname}?game=${gameId}`;
     const shareData = {
-        title: `Play ${game.title} on Crazy Hunter Hub!`,
+        title: `Play ${game.title} on CRAZYHUNTERHUB!`,
         text: `Check out ${game.title} - ${game.description}`,
         url: shareUrl
     };
