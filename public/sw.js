@@ -4,7 +4,7 @@ const urlsToCache = [
   '/index.html',
   '/src/script.js',
   '/src/index.css',
-  '/public/games.json',
+  '/src/games.json',
   '/src/comments.json'
 ];
 
