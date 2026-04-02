@@ -64,6 +64,7 @@ const pwaInfoBtn = document.getElementById('pwa-info-btn');
 const pwaModal = document.getElementById('pwa-modal');
 const pwaModalContent = document.getElementById('pwa-modal-content');
 const closePwaBtn = document.getElementById('close-pwa-btn');
+const headerOpenNewTab = document.getElementById('header-open-new-tab');
 let deferredPrompt;
 
 const mainContainer = document.getElementById('main-container');
@@ -810,6 +811,10 @@ pwaInfoBtn.addEventListener('click', openPwaInfo);
 closePwaBtn.addEventListener('click', closePwaInfo);
 pwaModal.addEventListener('click', (e) => {
     if (e.target === pwaModal) closePwaInfo();
+});
+
+headerOpenNewTab.addEventListener('click', () => {
+    window.open(window.location.href, '_blank');
 });
 
 searchInput.addEventListener('input', handleSearch);

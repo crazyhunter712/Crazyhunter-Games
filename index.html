@@ -25,6 +25,9 @@
             }
         }
     </script>
+</head>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- PWA Info Modal -->
     <div id="pwa-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-md hidden opacity-0 transition-all duration-300">
         <div class="bg-[#121212] border border-white/10 rounded-[2.5rem] p-8 max-w-md w-full mx-4 shadow-2xl scale-95 transition-all duration-300" id="pwa-modal-content">
@@ -81,8 +84,6 @@
             <iframe id="trailer-iframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
     </div>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         :root {
@@ -144,6 +145,10 @@
 
                 <button id="pwa-info-btn" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-white/40 hover:text-white" title="How to Install">
                     <i data-lucide="help-circle" class="w-5 h-5"></i>
+                </button>
+
+                <button id="header-open-new-tab" class="p-2 bg-white/5 hover:bg-blue-500/20 rounded-xl border border-white/10 transition-all text-white/40 hover:text-blue-400" title="Open Hub in New Tab">
+                    <i data-lucide="external-link" class="w-5 h-5"></i>
                 </button>
 
                 <button id="random-game-btn" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-white/60 hover:text-primary" title="Random Game">
