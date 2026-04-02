@@ -60,6 +60,10 @@ const closeTrailerBtn = document.getElementById('close-trailer-btn');
 
 // PWA Elements
 const installAppBtn = document.getElementById('install-app-btn');
+const pwaInfoBtn = document.getElementById('pwa-info-btn');
+const pwaModal = document.getElementById('pwa-modal');
+const pwaModalContent = document.getElementById('pwa-modal-content');
+const closePwaBtn = document.getElementById('close-pwa-btn');
 let deferredPrompt;
 
 const mainContainer = document.getElementById('main-container');
@@ -719,6 +723,22 @@ function closeTrailer() {
     }, 300);
 }
 
+function openPwaInfo() {
+    pwaModal.classList.remove('hidden');
+    setTimeout(() => {
+        pwaModal.classList.remove('opacity-0');
+        pwaModalContent.classList.remove('scale-95');
+    }, 10);
+}
+
+function closePwaInfo() {
+    pwaModal.classList.add('opacity-0');
+    pwaModalContent.classList.add('scale-95');
+    setTimeout(() => {
+        pwaModal.classList.add('hidden');
+    }, 300);
+}
+
 // Modal Logic
 requestGameBtn.addEventListener('click', () => {
     requestModal.classList.remove('hidden');
@@ -784,6 +804,12 @@ watchTrailerBtn.addEventListener('click', openTrailer);
 closeTrailerBtn.addEventListener('click', closeTrailer);
 trailerModal.addEventListener('click', (e) => {
     if (e.target === trailerModal) closeTrailer();
+});
+
+pwaInfoBtn.addEventListener('click', openPwaInfo);
+closePwaBtn.addEventListener('click', closePwaInfo);
+pwaModal.addEventListener('click', (e) => {
+    if (e.target === pwaModal) closePwaInfo();
 });
 
 searchInput.addEventListener('input', handleSearch);
