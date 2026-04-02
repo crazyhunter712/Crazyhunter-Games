@@ -1,3 +1,14 @@
+import { db } from './firebase.js';
+import { 
+    collection, 
+    addDoc, 
+    query, 
+    where, 
+    onSnapshot, 
+    orderBy,
+    serverTimestamp 
+} from 'firebase/firestore';
+
 let games = [];
 let filteredGames = [];
 let selectedGame = null;
@@ -589,13 +600,33 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // Comment System Functions
+let unsubscribeComments = null;
+
 async function fetchComments(gameId) {
+    if (unsubscribeComments) {
+        unsubscribeComments();
+    }
+
     try {
-        const response = await fetch(`/api/comments/${gameId}`);
-        const comments = await response.json();
-        renderComments(comments);
+        const q = query(
+            collection(db, 'comments'),
+            where('gameId', '==', gameId),
+            orderBy('date', 'desc')
+        );
+
+        unsubscribeComments = onSnapshot(q, (snapshot) => {
+            const comments = [];
+            snapshot.forEach((doc) => {
+                comments.push({ id: doc.id, ...doc.data() });
+            });
+            renderComments(comments);
+        }, (error) => {
+            console.error('Firestore Error (LIST):', error);
+            // If index is missing, it might fail initially. 
+            // We can fallback to a simpler query if needed, but usually we just wait for index.
+        });
     } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error('Error setting up comments listener:', error);
     }
 }
 
@@ -694,57 +725,30 @@ async function postComment(e) {
     submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Posting...</span>';
     lucide.createIcons();
 
-    console.log('Attempting to post comment:', { gameId: selectedGame.id, author, text, rating });
+    console.log('Attempting to post comment to Firestore:', { gameId: selectedGame.id, author, text, rating });
 
     try {
         const payload = {
             gameId: selectedGame.id,
             author: author,
             text: text,
-            rating: rating
+            rating: rating,
+            date: new Date().toISOString() // Using ISO string for consistency with existing UI logic
         };
         
-        console.log('Posting payload:', payload);
-
-        const response = await fetch('/api/comments', {
-            method: 'POST',
-            cache: 'no-cache',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const textResponse = await response.text();
-        console.log('Raw response text:', textResponse);
-
-        let result;
-        try {
-            result = JSON.parse(textResponse);
-        } catch (e) {
-            console.error('Failed to parse JSON response:', textResponse);
-            throw new Error(`Server returned invalid data: ${textResponse.substring(0, 50)}...`);
-        }
-
-        if (response.ok) {
-            console.log('Comment posted successfully:', result);
-            textInput.value = '';
-            // Don't clear name for convenience
-            await fetchComments(selectedGame.id);
-            
-            // Success feedback
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-bounce';
-            successMsg.textContent = 'Comment posted successfully!';
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
-        } else {
-            console.error('Server error posting comment:', result);
-            alert(`Failed to post comment: ${result.error || 'Unknown error'}`);
-        }
+        await addDoc(collection(db, 'comments'), payload);
+        
+        console.log('Comment posted successfully to Firestore');
+        textInput.value = '';
+        
+        // Success feedback
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-bounce';
+        successMsg.textContent = 'Comment posted successfully!';
+        document.body.appendChild(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
     } catch (error) {
-        console.error('Network error posting comment:', error);
+        console.error('Firestore Error (CREATE):', error);
         alert(`Failed to post comment. Error: ${error.message}. Please try again.`);
     } finally {
         submitBtn.disabled = false;

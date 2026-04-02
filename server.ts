@@ -7,16 +7,6 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const COMMENTS_FILE = path.join(process.cwd(), "src", "comments.json");
-
-// Ensure files exist
-if (!fs.existsSync(path.join(process.cwd(), "src"))) {
-  fs.mkdirSync(path.join(process.cwd(), "src"), { recursive: true });
-}
-if (!fs.existsSync(COMMENTS_FILE)) {
-  fs.writeFileSync(COMMENTS_FILE, JSON.stringify([]));
-}
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -44,55 +34,6 @@ async function startServer() {
     } catch (error) {
       console.error('Failed to fetch games from API:', error);
       res.status(500).json({ error: "Failed to fetch games", details: error.message });
-    }
-  });
-
-  app.get("/api/comments/:gameId", (req, res) => {
-    try {
-      const comments = JSON.parse(fs.readFileSync(COMMENTS_FILE, "utf-8"));
-      const gameComments = comments.filter((c: any) => c.gameId === req.params.gameId);
-      res.json(gameComments);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch comments" });
-    }
-  });
-
-  app.post("/api/comments", (req, res) => {
-    console.log('POST /api/comments request body:', req.body);
-    try {
-      const { gameId, author, text, rating } = req.body;
-      if (!gameId || !author || !text) {
-        console.warn('POST /api/comments - Missing fields:', { gameId, author, text });
-        return res.status(400).json({ error: "Missing required fields" });
-      }
-
-      let comments = [];
-      if (fs.existsSync(COMMENTS_FILE)) {
-        const fileContent = fs.readFileSync(COMMENTS_FILE, "utf-8");
-        try {
-          comments = JSON.parse(fileContent || "[]");
-        } catch (e) {
-          console.error('Error parsing comments.json, resetting to empty array');
-          comments = [];
-        }
-      }
-      
-      const newComment = {
-        id: Date.now().toString(),
-        gameId,
-        author,
-        text,
-        rating: rating || 0,
-        date: new Date().toISOString(),
-      };
-
-      comments.push(newComment);
-      fs.writeFileSync(COMMENTS_FILE, JSON.stringify(comments, null, 2));
-      console.log('POST /api/comments - Success:', newComment.id);
-      res.status(201).json(newComment);
-    } catch (error) {
-      console.error('POST /api/comments - Server Error:', error);
-      res.status(500).json({ error: "Failed to post comment", details: error.message });
     }
   });
 
