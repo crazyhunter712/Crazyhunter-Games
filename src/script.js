@@ -44,13 +44,6 @@ const saveScoreBtn = document.getElementById('save-score-btn');
 const savedScoreDisplay = document.getElementById('saved-score-display');
 const currentSortLabel = document.getElementById('current-sort-label');
 
-// Comment Elements
-const commentsList = document.getElementById('comments-list');
-const commentForm = document.getElementById('comment-form');
-const commentCount = document.getElementById('comment-count');
-const commentStars = document.getElementById('comment-stars');
-const commentRatingVal = document.getElementById('comment-rating-val');
-
 // Trailer Elements
 const watchTrailerBtn = document.getElementById('watch-trailer-btn');
 const trailerModal = document.getElementById('trailer-modal');
@@ -392,10 +385,6 @@ function openGame(game) {
         watchTrailerBtn.classList.add('hidden');
     }
 
-    // Fetch and render comments
-    fetchComments(game.id);
-    renderCommentStars(5);
-
     // Show loading overlay
     if (loadingOverlay) {
         loadingOverlay.classList.remove('opacity-0', 'invisible');
@@ -588,154 +577,6 @@ document.addEventListener('fullscreenchange', () => {
     lucide.createIcons();
 });
 
-// Comment System Functions
-async function fetchComments(gameId) {
-    try {
-        const response = await fetch(`/api/comments/${gameId}`);
-        const comments = await response.json();
-        renderComments(comments);
-    } catch (error) {
-        console.error('Error fetching comments:', error);
-    }
-}
-
-function renderComments(comments) {
-    commentsList.innerHTML = '';
-    commentCount.textContent = `${comments.length} Comment${comments.length !== 1 ? 's' : ''}`;
-
-    if (comments.length === 0) {
-        commentsList.innerHTML = `
-            <div class="text-center py-12 bg-white/5 rounded-3xl border border-white/10">
-                <div class="inline-block p-3 bg-white/5 rounded-full mb-3">
-                    <i data-lucide="message-square" class="w-6 h-6 text-white/20"></i>
-                </div>
-                <p class="text-white/40">No comments yet. Be the first to share your thoughts!</p>
-            </div>
-        `;
-        lucide.createIcons();
-        return;
-    }
-
-    // Sort by date descending
-    comments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    comments.forEach(comment => {
-        const date = new Date(comment.date).toLocaleDateString(undefined, { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        const commentEl = document.createElement('div');
-        commentEl.className = 'bg-white/5 border border-white/10 rounded-3xl p-6 transition-all hover:bg-white/[0.07]';
-        commentEl.innerHTML = `
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                        ${comment.author.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <h4 class="font-bold">${comment.author}</h4>
-                        <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold">${date}</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1 px-2 py-1 bg-white/5 rounded-lg border border-white/10">
-                    <i data-lucide="star" class="w-3 h-3 text-primary fill-primary"></i>
-                    <span class="text-xs font-bold">${comment.rating}</span>
-                </div>
-            </div>
-            <p class="text-white/70 leading-relaxed">${comment.text}</p>
-        `;
-        commentsList.appendChild(commentEl);
-    });
-    
-    lucide.createIcons();
-}
-
-function renderCommentStars(rating) {
-    commentStars.innerHTML = '';
-    commentRatingVal.value = rating;
-    
-    for (let i = 1; i <= 5; i++) {
-        const star = document.createElement('button');
-        star.type = 'button';
-        star.onclick = () => renderCommentStars(i);
-        star.className = `p-1 transition-all ${i <= rating ? 'text-primary' : 'text-white/20 hover:text-white/40'}`;
-        star.innerHTML = `<i data-lucide="star" class="w-6 h-6 ${i <= rating ? 'fill-current' : ''}"></i>`;
-        commentStars.appendChild(star);
-    }
-    lucide.createIcons();
-}
-
-async function postComment(e) {
-    e.preventDefault();
-    if (!selectedGame) {
-        console.error('No game selected for comment');
-        alert('Please select a game first!');
-        return;
-    }
-
-    const authorInput = document.getElementById('comment-author');
-    const textInput = document.getElementById('comment-text');
-    const author = authorInput.value.trim();
-    const text = textInput.value.trim();
-    const rating = parseInt(commentRatingVal.value);
-
-    if (!author || !text) {
-        alert('Please enter both your name and a comment!');
-        return;
-    }
-
-    const submitBtn = commentForm.querySelector('button[type="submit"]');
-    const originalContent = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Posting...</span>';
-    lucide.createIcons();
-
-    console.log('Attempting to post comment:', { gameId: selectedGame.id, author, text, rating });
-
-    try {
-        const response = await fetch('/api/comments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                gameId: selectedGame.id,
-                author,
-                text,
-                rating
-            })
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            console.log('Comment posted successfully:', result);
-            textInput.value = '';
-            // Don't clear name for convenience
-            await fetchComments(selectedGame.id);
-            
-            // Success feedback
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-bounce';
-            successMsg.textContent = 'Comment posted successfully!';
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
-        } else {
-            console.error('Server error posting comment:', result);
-            alert(`Failed to post comment: ${result.error || 'Unknown error'}`);
-        }
-    } catch (error) {
-        console.error('Network error posting comment:', error);
-        alert('Failed to post comment. Please check your connection.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalContent;
-        lucide.createIcons();
-    }
-}
-
 // Modal Logic
 function openTrailer() {
     if (!selectedGame || !selectedGame.trailerUrl) return;
@@ -831,8 +672,6 @@ saveScoreBtn.addEventListener('click', () => {
         }
     }
 });
-
-commentForm.addEventListener('submit', postComment);
 
 watchTrailerBtn.addEventListener('click', openTrailer);
 closeTrailerBtn.addEventListener('click', closeTrailer);

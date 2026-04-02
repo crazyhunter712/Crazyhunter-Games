@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "Comment": {
+      "title": "Comment",
+      "description": "A user comment on a game",
+      "type": "object",
+      "properties": {
+        "gameId": { "type": "string", "description": "The ID of the game" },
+        "author": { "type": "string", "description": "The name of the commenter" },
+        "text": { "type": "string", "description": "The comment content" },
+        "rating": { "type": "number", "description": "The star rating given" },
+        "date": { "type": "string", "format": "date-time", "description": "When the comment was posted" }
+      },
+      "required": ["gameId", "author", "text", "rating", "date"]
+    }
+  },
+  "firestore": {
+    "comments": {
+      "schema": { "$ref": "Comment" },
+      "description": "Collection of game comments"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isValidComment(data) {
+      return data.gameId is string &&
+             data.author is string && data.author.size() > 0 && data.author.size() < 50 &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 1000 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.date is string;
+    }
+
+    match /comments/{commentId} {
+      // Allow anyone to read comments
+      allow read: if true;
+      
+      // Allow anyone to post comments (since we don't have auth yet, but we validate the data)
+      allow create: if isValidComment(request.resource.data);
+      
+      // No updates or deletes for now to keep it simple and secure
+      allow update, delete: if false;
+    }
+  }
+}
