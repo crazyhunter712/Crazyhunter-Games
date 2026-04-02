@@ -3,3 +3,52 @@
 @theme {
   --breakpoint-xs: 400px;
 }
+
+/* Profile Borders */
+.border-amber-700 { border-color: #b45309; }
+.border-slate-400 { border-color: #94a3b8; }
+.border-yellow-400 { border-color: #facc15; }
+.border-cyan-400 { border-color: #22d3ee; }
+
+/* Rare Avatar Shimmer */
+.rare-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.rare-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 45%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0.1) 55%,
+        transparent 100%
+    );
+    transform: rotate(45deg);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Custom Scrollbar for Avatar Grid */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+#modal-xp-bar {
+    box-shadow: 0 0 10px var(--primary);
+}

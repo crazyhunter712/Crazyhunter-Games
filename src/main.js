@@ -7,8 +7,55 @@ let userRatings = JSON.parse(localStorage.getItem('crazyhunter_ratings') || '{}'
 let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]');
 let recentGames = JSON.parse(localStorage.getItem('crazyhunter_recent') || '[]');
 let personalScores = JSON.parse(localStorage.getItem('crazyhunter_scores') || '{}');
-let userProfile = JSON.parse(localStorage.getItem('crazyhunter_profile') || '{"nickname": "Guest", "avatar": "Guest"}');
-let userAchievements = JSON.parse(localStorage.getItem('crazyhunter_achievements') || '{"unlocked": [], "stats": {"gamesPlayed": 0, "themesUsed": ["orange"]}}');
+
+// Profile State with Defaults
+const defaultProfile = {
+    nickname: "Guest",
+    avatar: "Guest",
+    xp: 0,
+    level: 1,
+    unlockedBorders: ["none"],
+    selectedBorder: "none",
+    unlockedAvatars: []
+};
+let userProfile = { ...defaultProfile, ...JSON.parse(localStorage.getItem('crazyhunter_profile') || '{}') };
+
+// Achievements State with Defaults
+const defaultAchievements = {
+    unlocked: [],
+    stats: {
+        gamesPlayed: 0,
+        themesUsed: ["orange"],
+        playTimeMinutes: 0
+    }
+};
+let userAchievements = { ...defaultAchievements, ...JSON.parse(localStorage.getItem('crazyhunter_achievements') || '{}') };
+// Ensure nested stats are also merged
+userAchievements.stats = { ...defaultAchievements.stats, ...userAchievements.stats };
+
+const LEVEL_XP_BASE = 100;
+const LEVEL_XP_MULTIPLIER = 1.5;
+
+const BORDERS = {
+    'none': { name: 'None', class: '' },
+    'bronze': { name: 'Bronze', class: 'border-amber-700 shadow-[0_0_10px_rgba(180,83,9,0.5)]', level: 5 },
+    'silver': { name: 'Silver', class: 'border-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.5)]', level: 10 },
+    'gold': { name: 'Gold', class: 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]', level: 20 },
+    'diamond': { name: 'Diamond', class: 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.7)] animate-pulse', level: 50 },
+    'hunter': { name: 'Hunter', class: 'border-primary shadow-[0_0_25px_rgba(249,115,22,0.8)] border-dashed', level: 100 }
+};
+
+const RARE_AVATARS = [
+    { seed: 'Felix', level: 3 },
+    { seed: 'Luna', level: 7 },
+    { seed: 'Milo', level: 15 },
+    { seed: 'Simba', level: 25 },
+    { seed: 'Shadow', level: 40 },
+    { seed: 'Jasper', level: 60 },
+    { seed: 'Rocky', level: 80 },
+    { seed: 'Cooper', level: 100 }
+];
+
 let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 let currentCategory = 'all';
 let currentSort = 'default';
@@ -61,6 +108,7 @@ const pwaModalContent = document.getElementById('pwa-modal-content');
 const closePwaBtn = document.getElementById('close-pwa-btn');
 const headerOpenNewTab = document.getElementById('header-open-new-tab');
 let deferredPrompt;
+let playTimeInterval = null;
 
 // Profile Elements
 const profileTrigger = document.getElementById('profile-trigger');
@@ -72,6 +120,17 @@ const nicknameInput = document.getElementById('profile-nickname-input');
 const avatarGrid = document.getElementById('avatar-grid');
 const headerAvatar = document.getElementById('header-avatar');
 const headerNickname = document.getElementById('header-nickname');
+const headerLevelBadge = document.getElementById('header-level-badge');
+const headerAvatarContainer = document.getElementById('header-avatar-container');
+
+// Leveling Elements
+const modalLevelDisplay = document.getElementById('modal-level-display');
+const modalXpDisplay = document.getElementById('modal-xp-display');
+const modalXpBar = document.getElementById('modal-xp-bar');
+const avatarCount = document.getElementById('avatar-count');
+const borderSelectionContainer = document.getElementById('border-selection-container');
+const borderGrid = document.getElementById('border-grid');
+const xpIndicator = document.getElementById('xp-indicator');
 
 // Achievement Elements
 const achievementToast = document.getElementById('achievement-toast');
@@ -410,9 +469,22 @@ function openGame(game) {
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 5) userAchievements.stats.nightOwl = true;
     checkAchievements();
+    
+    // Award XP for opening a game
+    addXp(10, 'Opened a game');
 
     selectedGame = game;
     
+    // Start play time tracking
+    if (playTimeInterval) clearInterval(playTimeInterval);
+    playTimeInterval = setInterval(() => {
+        if (selectedGame) {
+            addXp(2, 'Play time');
+            userAchievements.stats.playTimeMinutes++;
+            checkAchievements();
+        }
+    }, 60000); // Every minute
+
     // Add to recent games
     recentGames = [game.id, ...recentGames.filter(id => id !== game.id)].slice(0, 10);
     localStorage.setItem('crazyhunter_recent', JSON.stringify(recentGames));
@@ -556,9 +628,15 @@ function openGame(game) {
 }
 
 window.rateGame = function(gameId, rating) {
+    const isFirstRating = !userRatings[gameId];
     userRatings[gameId] = rating;
     localStorage.setItem('crazyhunter_ratings', JSON.stringify(userRatings));
     
+    // Award XP for rating
+    if (isFirstRating) {
+        addXp(25, 'Rated a game');
+    }
+
     const game = games.find(g => g.id === gameId);
     if (game) {
         openGame(game); // Refresh play view
@@ -568,6 +646,11 @@ window.rateGame = function(gameId, rating) {
 function closeGame() {
     selectedGame = null;
     gameIframe.src = '';
+    
+    if (playTimeInterval) {
+        clearInterval(playTimeInterval);
+        playTimeInterval = null;
+    }
     
     // Reset loading state
     if (loadingOverlay) {
@@ -708,6 +791,9 @@ saveScoreBtn.addEventListener('click', () => {
             savedScoreDisplay.innerHTML = `Current Best: <span class="text-white font-bold">${score}</span>`;
             savedScoreDisplay.classList.remove('hidden');
             
+            // Award XP for high score
+            addXp(50, 'Saved high score');
+
             // Visual feedback
             saveScoreBtn.classList.add('bg-green-500');
             setTimeout(() => saveScoreBtn.classList.remove('bg-green-500'), 1000);
@@ -800,6 +886,9 @@ const ACHIEVEMENTS = {
     'NIGHT_OWL': { title: 'Night Owl', desc: 'Played a game after midnight.', icon: 'moon', check: (stats) => stats.nightOwl },
     'THEME_MASTER': { title: 'Theme Master', desc: 'Tried all 4 color themes.', icon: 'palette', check: (stats) => stats.themesUsed.length >= 4 },
     'FAVORITE_FAN': { title: 'Loyal Fan', desc: 'Added 5 games to favorites.', icon: 'heart', check: (stats) => stats.favoritesCount >= 5 },
+    'LEVEL_10': { title: 'Rising Star', desc: 'Reached Level 10.', icon: 'trending-up', check: (stats) => userProfile.level >= 10 },
+    'LEVEL_25': { title: 'Elite Hunter', desc: 'Reached Level 25.', icon: 'shield-check', check: (stats) => userProfile.level >= 25 },
+    'LEVEL_50': { title: 'Legendary', desc: 'Reached Level 50.', icon: 'zap', check: (stats) => userProfile.level >= 50 },
     'HIGH_SCORER': { title: 'Pro Gamer', desc: 'Saved a personal high score.', icon: 'trophy', check: (stats) => stats.hasHighScore }
 };
 
@@ -838,24 +927,197 @@ const avatarSeeds = [
 ];
 
 function renderAvatarGrid() {
+    if (!avatarGrid) return;
     avatarGrid.innerHTML = '';
-    avatarSeeds.forEach(seed => {
-        const url = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
+    const allAvatars = [...avatarSeeds];
+    
+    // Add rare avatars if unlocked
+    RARE_AVATARS.forEach(av => {
+        if (!allAvatars.includes(av.seed)) allAvatars.push(av.seed);
+    });
+
+    let unlockedCount = 0;
+    allAvatars.forEach(seed => {
+        const isRare = RARE_AVATARS.find(av => av.seed === seed);
+        const isUnlocked = !isRare || userProfile.unlockedAvatars.includes(seed);
+        if (isUnlocked) unlockedCount++;
+
         const btn = document.createElement('button');
-        btn.className = `aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${userProfile.avatar === seed ? 'border-primary bg-primary/10' : 'border-white/5 bg-white/5'}`;
-        btn.innerHTML = `<img src="${url}" alt="${seed}" class="w-full h-full object-cover">`;
-        btn.onclick = () => {
-            userProfile.avatar = seed;
-            renderAvatarGrid();
-        };
+        btn.className = `aspect-square rounded-xl overflow-hidden border-2 transition-all relative ${isUnlocked ? 'hover:scale-105' : 'opacity-40 grayscale cursor-not-allowed'}`;
+        
+        if (isRare && isUnlocked) {
+            btn.classList.add('rare-shimmer');
+        }
+
+        if (userProfile.avatar === seed) {
+            btn.classList.add('border-primary', 'bg-primary/10');
+        } else {
+            btn.classList.add('border-white/5', 'bg-white/5');
+        }
+
+        btn.innerHTML = `
+            <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}" alt="${seed}" class="w-full h-full object-cover">
+            ${!isUnlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/40"><i data-lucide="lock" class="w-4 h-4 text-white"></i></div>` : ''}
+            ${isRare ? `<div class="absolute top-0 right-0 p-0.5 bg-yellow-500 rounded-bl-lg"><i data-lucide="sparkles" class="w-2 h-2 text-black"></i></div>` : ''}
+        `;
+
+        if (isUnlocked) {
+            btn.onclick = () => {
+                userProfile.avatar = seed;
+                renderAvatarGrid();
+            };
+        }
         avatarGrid.appendChild(btn);
     });
+    
+    if (avatarCount) avatarCount.textContent = `${unlockedCount}/${allAvatars.length}`;
+    lucide.createIcons();
+    renderBorderGrid();
+}
+
+function renderBorderGrid() {
+    if (!borderGrid || !borderSelectionContainer) return;
+    
+    if (userProfile.level < 5) {
+        borderSelectionContainer.classList.add('hidden');
+        return;
+    }
+    
+    borderSelectionContainer.classList.remove('hidden');
+    borderGrid.innerHTML = '';
+    
+    Object.keys(BORDERS).forEach(key => {
+        const border = BORDERS[key];
+        const isUnlocked = userProfile.unlockedBorders.includes(key);
+        
+        const btn = document.createElement('button');
+        btn.className = `aspect-square rounded-xl border-2 transition-all flex items-center justify-center relative ${isUnlocked ? 'hover:scale-105' : 'opacity-40 grayscale cursor-not-allowed'}`;
+        
+        if (userProfile.selectedBorder === key) {
+            btn.classList.add('border-primary', 'bg-primary/10');
+        } else {
+            btn.classList.add('border-white/5', 'bg-white/5');
+        }
+
+        btn.innerHTML = `
+            <div class="w-8 h-8 rounded-lg border-2 bg-white/10 ${border.class}"></div>
+            ${!isUnlocked ? `<div class="absolute inset-0 flex items-center justify-center bg-black/40"><i data-lucide="lock" class="w-4 h-4 text-white"></i></div>` : ''}
+        `;
+
+        if (isUnlocked) {
+            btn.onclick = () => {
+                userProfile.selectedBorder = key;
+                renderBorderGrid();
+                applyProfile();
+            };
+        }
+        borderGrid.appendChild(btn);
+    });
+    lucide.createIcons();
 }
 
 function applyProfile() {
+    if (!headerNickname || !headerAvatar) return;
+    
     headerNickname.textContent = userProfile.nickname;
     headerAvatar.src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${userProfile.avatar}`;
-    nicknameInput.value = userProfile.nickname;
+    if (nicknameInput) nicknameInput.value = userProfile.nickname;
+    
+    // Update Leveling UI
+    const level = calculateLevel(userProfile.xp);
+    userProfile.level = level;
+    if (headerLevelBadge) headerLevelBadge.textContent = level;
+    
+    // Apply Border
+    const border = BORDERS[userProfile.selectedBorder || 'none'];
+    if (headerAvatarContainer) {
+        headerAvatarContainer.className = `w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border-2 bg-primary/20 relative z-10 ${border.class}`;
+    }
+    
+    // Update Modal Stats
+    if (modalLevelDisplay) {
+        modalLevelDisplay.textContent = `LEVEL ${level}`;
+        const xpForCurrent = getXpForLevel(level);
+        const xpForNext = getXpForLevel(level + 1);
+        const progress = userProfile.xp - xpForCurrent;
+        const required = xpForNext - xpForCurrent;
+        const percent = Math.min(100, (progress / required) * 100);
+        
+        if (modalXpDisplay) modalXpDisplay.textContent = `${Math.floor(userProfile.xp)} / ${Math.floor(xpForNext)}`;
+        if (modalXpBar) modalXpBar.style.width = `${percent}%`;
+    }
+}
+
+function calculateLevel(xp) {
+    let level = 1;
+    while (xp >= getXpForLevel(level + 1)) {
+        level++;
+    }
+    return level;
+}
+
+function getXpForLevel(level) {
+    if (level <= 1) return 0;
+    return Math.floor(LEVEL_XP_BASE * Math.pow(level - 1, LEVEL_XP_MULTIPLIER));
+}
+
+function addXp(amount, reason) {
+    try {
+        const oldLevel = calculateLevel(userProfile.xp);
+        userProfile.xp += amount;
+        const newLevel = calculateLevel(userProfile.xp);
+        
+        if (newLevel > oldLevel) {
+            handleLevelUp(newLevel);
+        }
+        
+        // Show XP Indicator
+        if (xpIndicator) {
+            xpIndicator.textContent = `+${Math.floor(amount)} XP`;
+            xpIndicator.classList.remove('opacity-0', '-top-4');
+            xpIndicator.classList.add('opacity-100', '-top-8');
+            
+            setTimeout(() => {
+                xpIndicator.classList.add('opacity-0', '-top-4');
+                xpIndicator.classList.remove('opacity-100', '-top-8');
+            }, 2000);
+        }
+        
+        localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+        applyProfile();
+    } catch (e) {
+        console.error("Error adding XP:", e);
+    }
+}
+
+function handleLevelUp(level) {
+    // Show Level Up Toast
+    if (toastTitle && toastDesc && achievementToast) {
+        toastTitle.textContent = `LEVEL UP!`;
+        toastDesc.textContent = `You reached Level ${level}! New rewards unlocked.`;
+        achievementToast.classList.remove('translate-y-32', 'opacity-0');
+        
+        setTimeout(() => {
+            achievementToast.classList.add('translate-y-32', 'opacity-0');
+        }, 5000);
+    }
+    
+    // Check for unlocks
+    Object.keys(BORDERS).forEach(key => {
+        if (BORDERS[key].level === level) {
+            if (!userProfile.unlockedBorders.includes(key)) {
+                userProfile.unlockedBorders.push(key);
+            }
+        }
+    });
+    
+    RARE_AVATARS.forEach(av => {
+        if (av.level === level) {
+            if (!userProfile.unlockedAvatars.includes(av.seed)) {
+                userProfile.unlockedAvatars.push(av.seed);
+            }
+        }
+    });
 }
 
 function openProfile() {

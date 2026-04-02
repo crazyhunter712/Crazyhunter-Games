@@ -188,9 +188,15 @@
                 </button>
 
                 <!-- User Profile -->
-                <button id="profile-trigger" class="flex shrink-0 items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border border-white/10 bg-primary/20">
-                        <img id="header-avatar" src="https://api.dicebear.com/7.x/pixel-art/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
+                <button id="profile-trigger" class="flex shrink-0 items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group relative">
+                    <div class="relative">
+                        <div id="header-avatar-container" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border-2 border-white/10 bg-primary/20 relative z-10">
+                            <img id="header-avatar" src="https://api.dicebear.com/7.x/pixel-art/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <!-- Level Badge -->
+                        <div id="header-level-badge" class="absolute -bottom-1 -right-1 bg-primary text-black text-[8px] font-black px-1 rounded-md border border-black z-20">1</div>
+                        <!-- XP Indicator -->
+                        <div id="xp-indicator" class="absolute -top-4 left-1/2 -translate-x-1/2 text-primary font-black text-[10px] opacity-0 pointer-events-none transition-all duration-500">+10 XP</div>
                     </div>
                     <div class="flex flex-col items-start hidden xs:flex">
                         <span id="header-nickname" class="text-[10px] sm:text-xs font-bold truncate max-w-[50px] sm:max-w-[80px]">Guest</span>
@@ -588,9 +594,26 @@
             </div>
 
             <!-- Tabs -->
-            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-8">
+            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6">
                 <button id="tab-profile" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all bg-primary text-black">Profile</button>
                 <button id="tab-badges" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all text-white/40 hover:text-white">Badges</button>
+            </div>
+
+            <!-- Level Progress Bar -->
+            <div id="level-progress-container" class="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <div class="text-[10px] font-black text-white/20 uppercase tracking-widest">Current Level</div>
+                        <div id="modal-level-display" class="text-2xl font-black text-primary">LEVEL 1</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] font-black text-white/20 uppercase tracking-widest">Total XP</div>
+                        <div id="modal-xp-display" class="text-sm font-bold">0 / 100</div>
+                    </div>
+                </div>
+                <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div id="modal-xp-bar" class="h-full bg-primary transition-all duration-1000" style="width: 0%"></div>
+                </div>
             </div>
             
             <div id="profile-tab-content" class="space-y-8">
@@ -611,9 +634,20 @@
 
                 <!-- Avatar Selection -->
                 <div>
-                    <label class="block text-sm font-bold text-white/40 mb-3 uppercase tracking-widest">Choose Avatar</label>
-                    <div id="avatar-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-3 max-h-[240px] overflow-y-auto pr-2 no-scrollbar">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm font-bold text-white/40 uppercase tracking-widest">Choose Avatar</label>
+                        <span id="avatar-count" class="text-[10px] font-black text-primary uppercase tracking-widest">20/20</span>
+                    </div>
+                    <div id="avatar-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-3 max-h-[160px] overflow-y-auto pr-2 no-scrollbar">
                         <!-- Avatars will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Border Selection -->
+                <div id="border-selection-container" class="hidden">
+                    <label class="block text-sm font-bold text-white/40 mb-3 uppercase tracking-widest">Profile Borders</label>
+                    <div id="border-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                        <!-- Borders will be injected here -->
                     </div>
                 </div>
 
