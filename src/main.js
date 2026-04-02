@@ -21,7 +21,8 @@ const defaultProfile = {
     unlockedGlows: ["none"],
     selectedGlow: "none",
     unlockedEntryEffects: ["none"],
-    selectedEntryEffect: "none"
+    selectedEntryEffect: "none",
+    lastSpinDate: null
 };
 let userProfile = { ...defaultProfile, ...JSON.parse(localStorage.getItem('crazyhunter_profile') || '{}') };
 
@@ -131,6 +132,169 @@ const closePwaBtn = document.getElementById('close-pwa-btn');
 const headerOpenNewTab = document.getElementById('header-open-new-tab');
 let deferredPrompt;
 let playTimeInterval = null;
+
+const SPIN_REWARDS = [
+    { type: 'coins', value: 10, label: '10 Coins', color: '#1a1a1a' },
+    { type: 'coins', value: 50, label: '50 Coins', color: '#262626' },
+    { type: 'avatar', value: 'Rare', label: 'Rare Avatar', color: '#f97316' },
+    { type: 'coins', value: 25, label: '25 Coins', color: '#1a1a1a' },
+    { type: 'coins', value: 100, label: '100 Coins', color: '#262626' },
+    { type: 'coins', value: 500, label: '500 Coins', color: '#eab308' },
+    { type: 'coins', value: 20, label: '20 Coins', color: '#1a1a1a' },
+    { type: 'coins', value: 75, label: '75 Coins', color: '#262626' }
+];
+
+// Spin Elements
+const spinTrigger = document.getElementById('spin-trigger');
+const spinModal = document.getElementById('spin-modal');
+const spinModalContent = document.getElementById('spin-modal-content');
+const closeSpinBtn = document.getElementById('close-spin-btn');
+const luckyWheel = document.getElementById('lucky-wheel');
+const spinButton = document.getElementById('spin-button');
+const spinTimer = document.getElementById('spin-timer');
+const spinDot = document.getElementById('spin-dot');
+
+let isSpinning = false;
+let currentRotation = 0;
+
+function updateSpinStatus() {
+    const now = new Date().getTime();
+    const lastSpin = userProfile.lastSpinDate ? new Date(userProfile.lastSpinDate).getTime() : 0;
+    const cooldown = 24 * 60 * 60 * 1000; // 24 hours
+    const timeLeft = cooldown - (now - lastSpin);
+
+    if (timeLeft > 0) {
+        spinButton.disabled = true;
+        spinTimer.classList.remove('hidden');
+        spinDot.classList.add('hidden');
+        updateSpinTimer(timeLeft);
+    } else {
+        spinButton.disabled = false;
+        spinButton.textContent = "Spin Now";
+        spinTimer.classList.add('hidden');
+        spinDot.classList.remove('hidden');
+    }
+}
+
+function updateSpinTimer(timeLeft) {
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+    
+    spinTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    spinButton.textContent = "Come back later";
+
+    if (timeLeft > 0) {
+        setTimeout(() => updateSpinStatus(), 1000);
+    } else {
+        updateSpinStatus();
+    }
+}
+
+function renderWheel() {
+    if (!luckyWheel) return;
+    luckyWheel.innerHTML = '';
+    const segmentAngle = 360 / SPIN_REWARDS.length;
+
+    SPIN_REWARDS.forEach((reward, i) => {
+        const segment = document.createElement('div');
+        segment.className = "absolute top-0 left-0 w-full h-full origin-center";
+        segment.style.transform = `rotate(${i * segmentAngle}deg)`;
+        
+        // Create the pie slice using clip-path
+        const slice = document.createElement('div');
+        slice.className = "absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 origin-bottom";
+        slice.style.backgroundColor = reward.color;
+        slice.style.clipPath = `polygon(50% 100%, 0 0, 100% 0)`;
+        
+        // Add text
+        const text = document.createElement('div');
+        text.className = "absolute top-8 left-1/2 -translate-x-1/2 text-[10px] font-black text-white uppercase tracking-tighter whitespace-nowrap";
+        text.style.transform = `rotate(0deg)`;
+        text.textContent = reward.label;
+        
+        slice.appendChild(text);
+        segment.appendChild(slice);
+        luckyWheel.appendChild(segment);
+    });
+}
+
+function openSpinModal() {
+    spinModal.classList.remove('invisible', 'opacity-0');
+    spinModalContent.classList.remove('scale-90');
+    renderWheel();
+    updateSpinStatus();
+}
+
+function closeSpinModal() {
+    if (isSpinning) return;
+    spinModal.classList.add('invisible', 'opacity-0');
+    spinModalContent.classList.add('scale-90');
+}
+
+function handleSpin() {
+    if (isSpinning) return;
+    
+    isSpinning = true;
+    spinButton.disabled = true;
+    
+    // Randomize rotation: at least 5 full spins + random segment
+    const extraSpins = 5 + Math.floor(Math.random() * 5);
+    const randomSegment = Math.floor(Math.random() * SPIN_REWARDS.length);
+    const segmentAngle = 360 / SPIN_REWARDS.length;
+    
+    // Calculate final rotation
+    // We want the pointer (at the top) to point to the segment
+    // The wheel rotates clockwise. Segment 0 is at the top (0 deg).
+    // To point to segment N, we need to rotate the wheel by -(N * segmentAngle)
+    const targetRotation = currentRotation + (extraSpins * 360) + (360 - (randomSegment * segmentAngle));
+    currentRotation = targetRotation;
+    
+    luckyWheel.style.transform = `rotate(${targetRotation}deg)`;
+    
+    setTimeout(() => {
+        isSpinning = false;
+        const reward = SPIN_REWARDS[randomSegment];
+        giveSpinReward(reward);
+        userProfile.lastSpinDate = new Date().toISOString();
+        localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+        updateSpinStatus();
+    }, 5500);
+}
+
+function giveSpinReward(reward) {
+    if (reward.type === 'coins') {
+        userProfile.coins += reward.value;
+        updateCoinDisplays();
+        
+        // Show reward toast
+        toastTitle.textContent = "LUCKY WIN!";
+        toastDesc.textContent = `You won ${reward.value} Hunter Coins!`;
+    } else if (reward.type === 'avatar') {
+        // Pick a rare avatar the user doesn't have yet
+        const lockedRare = RARE_AVATARS.filter(av => !userProfile.unlockedAvatars.includes(av.seed));
+        if (lockedRare.length > 0) {
+            const wonAvatar = lockedRare[Math.floor(Math.random() * lockedRare.length)];
+            userProfile.unlockedAvatars.push(wonAvatar.seed);
+            toastTitle.textContent = "LEGENDARY WIN!";
+            toastDesc.textContent = `You unlocked the Rare Avatar: ${wonAvatar.seed}!`;
+        } else {
+            // Fallback if all rare avatars are unlocked
+            userProfile.coins += 250;
+            updateCoinDisplays();
+            toastTitle.textContent = "LUCKY WIN!";
+            toastDesc.textContent = `All avatars unlocked! You got 250 Coins instead.`;
+        }
+    }
+    
+    achievementToast.classList.remove('translate-y-32', 'opacity-0');
+    setTimeout(() => {
+        achievementToast.classList.add('translate-y-32', 'opacity-0');
+    }, 5000);
+    
+    localStorage.setItem('crazyhunter_profile', JSON.stringify(userProfile));
+    applyProfile();
+}
 
 // Shop Elements
 const shopTrigger = document.getElementById('shop-trigger');
@@ -328,6 +492,7 @@ async function init() {
     renderAvatarGrid();
     checkAchievements(); // Initial check for existing stats
     updateCoinDisplays();
+    updateSpinStatus();
     playEntryEffect();
     
     // Register Service Worker
@@ -1022,6 +1187,16 @@ if (shopTabEffects) shopTabEffects.addEventListener('click', () => switchShopTab
 if (shopModal) {
     shopModal.addEventListener('click', (e) => {
         if (e.target === shopModal) closeShop();
+    });
+}
+
+// Spin Listeners
+if (spinTrigger) spinTrigger.addEventListener('click', openSpinModal);
+if (closeSpinBtn) closeSpinBtn.addEventListener('click', closeSpinModal);
+if (spinButton) spinButton.addEventListener('click', handleSpin);
+if (spinModal) {
+    spinModal.addEventListener('click', (e) => {
+        if (e.target === spinModal) closeSpinModal();
     });
 }
 
