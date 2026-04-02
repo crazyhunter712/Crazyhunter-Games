@@ -537,6 +537,17 @@
     </div>
 
     <script src="src/script.js"></script>
+    <script>
+        console.log('Crazy Hunter Hub v5 - Service Worker Update Check');
+        // Force service worker update
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.update();
+                }
+            });
+        }
+    </script>
 </body>
 </html>
 

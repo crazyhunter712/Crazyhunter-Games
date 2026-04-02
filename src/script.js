@@ -697,18 +697,35 @@ async function postComment(e) {
     console.log('Attempting to post comment:', { gameId: selectedGame.id, author, text, rating });
 
     try {
+        const payload = {
+            gameId: selectedGame.id,
+            author: author,
+            text: text,
+            rating: rating
+        };
+        
+        console.log('Posting payload:', payload);
+
         const response = await fetch('/api/comments', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                gameId: selectedGame.id,
-                author,
-                text,
-                rating
-            })
+            cache: 'no-cache',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const textResponse = await response.text();
+        console.log('Raw response text:', textResponse);
+
+        let result;
+        try {
+            result = JSON.parse(textResponse);
+        } catch (e) {
+            console.error('Failed to parse JSON response:', textResponse);
+            throw new Error(`Server returned invalid data: ${textResponse.substring(0, 50)}...`);
+        }
 
         if (response.ok) {
             console.log('Comment posted successfully:', result);
@@ -728,7 +745,7 @@ async function postComment(e) {
         }
     } catch (error) {
         console.error('Network error posting comment:', error);
-        alert(`Failed to post comment. Error: ${error.message}. Check console for details.`);
+        alert(`Failed to post comment. Error: ${error.message}. Please try again.`);
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
