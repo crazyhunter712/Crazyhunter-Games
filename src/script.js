@@ -813,9 +813,7 @@ pwaModal.addEventListener('click', (e) => {
     if (e.target === pwaModal) closePwaInfo();
 });
 
-headerOpenNewTab.addEventListener('click', () => {
-    window.open(window.location.href, '_blank');
-});
+headerOpenNewTab.href = window.location.href;
 
 searchInput.addEventListener('input', handleSearch);
 
