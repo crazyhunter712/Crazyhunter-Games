@@ -671,17 +671,30 @@ function renderCommentStars(rating) {
 
 async function postComment(e) {
     e.preventDefault();
-    if (!selectedGame) return;
+    if (!selectedGame) {
+        console.error('No game selected for comment');
+        alert('Please select a game first!');
+        return;
+    }
 
-    const author = document.getElementById('comment-author').value;
-    const text = document.getElementById('comment-text').value;
+    const authorInput = document.getElementById('comment-author');
+    const textInput = document.getElementById('comment-text');
+    const author = authorInput.value.trim();
+    const text = textInput.value.trim();
     const rating = parseInt(commentRatingVal.value);
+
+    if (!author || !text) {
+        alert('Please enter both your name and a comment!');
+        return;
+    }
 
     const submitBtn = commentForm.querySelector('button[type="submit"]');
     const originalContent = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Posting...</span>';
     lucide.createIcons();
+
+    console.log('Attempting to post comment:', { gameId: selectedGame.id, author, text, rating });
 
     try {
         const response = await fetch('/api/comments', {
@@ -695,13 +708,27 @@ async function postComment(e) {
             })
         });
 
+        const result = await response.json();
+
         if (response.ok) {
-            document.getElementById('comment-text').value = '';
+            console.log('Comment posted successfully:', result);
+            textInput.value = '';
             // Don't clear name for convenience
             await fetchComments(selectedGame.id);
+            
+            // Success feedback
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-bounce';
+            successMsg.textContent = 'Comment posted successfully!';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        } else {
+            console.error('Server error posting comment:', result);
+            alert(`Failed to post comment: ${result.error || 'Unknown error'}`);
         }
     } catch (error) {
-        console.error('Error posting comment:', error);
+        console.error('Network error posting comment:', error);
+        alert('Failed to post comment. Please check your connection.');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;

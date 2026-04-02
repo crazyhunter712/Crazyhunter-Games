@@ -55,13 +55,21 @@ async function startServer() {
   });
 
   app.post("/api/comments", (req, res) => {
+    console.log('POST /api/comments received:', req.body);
     try {
       const { gameId, author, text, rating } = req.body;
       if (!gameId || !author || !text) {
+        console.warn('Missing fields:', { gameId, author, text });
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const comments = JSON.parse(fs.readFileSync(COMMENTS_FILE, "utf-8"));
+      if (!fs.existsSync(COMMENTS_FILE)) {
+        fs.writeFileSync(COMMENTS_FILE, JSON.stringify([]));
+      }
+
+      const fileContent = fs.readFileSync(COMMENTS_FILE, "utf-8");
+      const comments = JSON.parse(fileContent || "[]");
+      
       const newComment = {
         id: Date.now().toString(),
         gameId,
@@ -73,9 +81,11 @@ async function startServer() {
 
       comments.push(newComment);
       fs.writeFileSync(COMMENTS_FILE, JSON.stringify(comments, null, 2));
+      console.log('Comment saved successfully:', newComment.id);
       res.status(201).json(newComment);
     } catch (error) {
-      res.status(500).json({ error: "Failed to post comment" });
+      console.error('Failed to post comment:', error);
+      res.status(500).json({ error: "Failed to post comment", details: error.message });
     }
   });
 
