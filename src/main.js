@@ -8,6 +8,7 @@ let favorites = JSON.parse(localStorage.getItem('crazyhunter_favorites') || '[]'
 let recentGames = JSON.parse(localStorage.getItem('crazyhunter_recent') || '[]');
 let personalScores = JSON.parse(localStorage.getItem('crazyhunter_scores') || '{}');
 let userProfile = JSON.parse(localStorage.getItem('crazyhunter_profile') || '{"nickname": "Guest", "avatar": "Guest"}');
+let userAchievements = JSON.parse(localStorage.getItem('crazyhunter_achievements') || '{"unlocked": [], "stats": {"gamesPlayed": 0, "themesUsed": ["orange"]}}');
 let currentTheme = localStorage.getItem('crazyhunter_theme') || 'orange';
 let currentCategory = 'all';
 let currentSort = 'default';
@@ -72,6 +73,16 @@ const avatarGrid = document.getElementById('avatar-grid');
 const headerAvatar = document.getElementById('header-avatar');
 const headerNickname = document.getElementById('header-nickname');
 
+// Achievement Elements
+const achievementToast = document.getElementById('achievement-toast');
+const toastTitle = document.getElementById('toast-title');
+const toastDesc = document.getElementById('toast-desc');
+const badgesGrid = document.getElementById('badges-grid');
+const tabProfile = document.getElementById('tab-profile');
+const tabBadges = document.getElementById('tab-badges');
+const profileTabContent = document.getElementById('profile-tab-content');
+const badgesTabContent = document.getElementById('badges-tab-content');
+
 const mainContainer = document.getElementById('main-container');
 
 // Request Modal Elements
@@ -87,6 +98,7 @@ async function init() {
     applyTheme(currentTheme);
     applyProfile();
     renderAvatarGrid();
+    checkAchievements(); // Initial check for existing stats
     
     // Register Service Worker
     if ('serviceWorker' in navigator) {
@@ -385,6 +397,12 @@ window.shareGame = async function(gameId) {
 };
 
 function openGame(game) {
+    // Track stats
+    userAchievements.stats.gamesPlayed++;
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 5) userAchievements.stats.nightOwl = true;
+    checkAchievements();
+
     selectedGame = game;
     
     // Add to recent games
@@ -734,6 +752,8 @@ fullscreenButton.addEventListener('click', toggleFullscreen);
 profileTrigger.addEventListener('click', openProfile);
 closeProfileBtn.addEventListener('click', closeProfile);
 saveProfileBtn.addEventListener('click', saveProfile);
+tabProfile.addEventListener('click', () => switchTab('profile'));
+tabBadges.addEventListener('click', () => switchTab('badges'));
 profileModal.addEventListener('click', (e) => {
     if (e.target === profileModal) closeProfile();
 });
@@ -748,6 +768,43 @@ if (openNewTabBtn) {
 }
 
 // Profile Logic
+const ACHIEVEMENTS = {
+    'PLAY_10': { title: 'Game Addict', desc: 'Played 10 different games.', icon: 'gamepad-2', check: (stats) => stats.gamesPlayed >= 10 },
+    'NIGHT_OWL': { title: 'Night Owl', desc: 'Played a game after midnight.', icon: 'moon', check: (stats) => stats.nightOwl },
+    'THEME_MASTER': { title: 'Theme Master', desc: 'Tried all 4 color themes.', icon: 'palette', check: (stats) => stats.themesUsed.length >= 4 },
+    'FAVORITE_FAN': { title: 'Loyal Fan', desc: 'Added 5 games to favorites.', icon: 'heart', check: (stats) => stats.favoritesCount >= 5 },
+    'HIGH_SCORER': { title: 'Pro Gamer', desc: 'Saved a personal high score.', icon: 'trophy', check: (stats) => stats.hasHighScore }
+};
+
+function checkAchievements() {
+    // Update dynamic stats
+    userAchievements.stats.favoritesCount = favorites.length;
+    userAchievements.stats.hasHighScore = Object.keys(personalScores).length > 0;
+
+    Object.keys(ACHIEVEMENTS).forEach(id => {
+        if (!userAchievements.unlocked.includes(id)) {
+            if (ACHIEVEMENTS[id].check(userAchievements.stats)) {
+                unlockAchievement(id);
+            }
+        }
+    });
+    localStorage.setItem('crazyhunter_achievements', JSON.stringify(userAchievements));
+}
+
+function unlockAchievement(id) {
+    userAchievements.unlocked.push(id);
+    const ach = ACHIEVEMENTS[id];
+    
+    // Show Toast
+    toastTitle.textContent = ach.title;
+    toastDesc.textContent = ach.desc;
+    achievementToast.classList.remove('translate-y-32', 'opacity-0');
+    
+    setTimeout(() => {
+        achievementToast.classList.add('translate-y-32', 'opacity-0');
+    }, 5000);
+}
+
 const avatarSeeds = [
     'Guest', 'Felix', 'Jack', 'Luna', 'Oliver', 'Milo', 'Leo', 'Max', 'Charlie', 'Simba',
     'Shadow', 'Jasper', 'Toby', 'Rocky', 'Bear', 'Duke', 'Cooper', 'Riley', 'Bailey', 'Zoe'
@@ -780,7 +837,48 @@ function openProfile() {
         profileModal.classList.remove('opacity-0');
         profileModalContent.classList.remove('scale-95');
     }, 10);
+    switchTab('profile');
     renderAvatarGrid();
+}
+
+function switchTab(tab) {
+    if (tab === 'profile') {
+        tabProfile.classList.add('bg-primary', 'text-black');
+        tabProfile.classList.remove('text-white/40');
+        tabBadges.classList.remove('bg-primary', 'text-black');
+        tabBadges.classList.add('text-white/40');
+        profileTabContent.classList.remove('hidden');
+        badgesTabContent.classList.add('hidden');
+    } else {
+        tabBadges.classList.add('bg-primary', 'text-black');
+        tabBadges.classList.remove('text-white/40');
+        tabProfile.classList.remove('bg-primary', 'text-black');
+        tabProfile.classList.add('text-white/40');
+        badgesTabContent.classList.remove('hidden');
+        profileTabContent.classList.add('hidden');
+        renderBadgesGrid();
+    }
+}
+
+function renderBadgesGrid() {
+    badgesGrid.innerHTML = '';
+    Object.keys(ACHIEVEMENTS).forEach(id => {
+        const ach = ACHIEVEMENTS[id];
+        const isUnlocked = userAchievements.unlocked.includes(id);
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border transition-all ${isUnlocked ? 'bg-primary/5 border-primary/20' : 'bg-white/5 border-white/5 opacity-50'}`;
+        card.innerHTML = `
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center ${isUnlocked ? 'bg-primary text-black' : 'bg-white/10 text-white/20'}">
+                    <i data-lucide="${ach.icon}" class="w-5 h-5"></i>
+                </div>
+                <div class="font-bold text-sm ${isUnlocked ? 'text-white' : 'text-white/20'}">${ach.title}</div>
+            </div>
+            <div class="text-[10px] leading-relaxed ${isUnlocked ? 'text-white/40' : 'text-white/10'}">${ach.desc}</div>
+        `;
+        badgesGrid.appendChild(card);
+    });
+    lucide.createIcons();
 }
 
 function closeProfile() {
@@ -808,6 +906,13 @@ function saveProfile() {
 // Theme Logic
 window.setTheme = function(themeName) {
     currentTheme = themeName;
+    
+    // Track themes
+    if (!userAchievements.stats.themesUsed.includes(themeName)) {
+        userAchievements.stats.themesUsed.push(themeName);
+        checkAchievements();
+    }
+
     localStorage.setItem('crazyhunter_theme', themeName);
     applyTheme(themeName);
 };

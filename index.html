@@ -495,16 +495,22 @@
             <div class="flex items-center justify-between mb-8">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-primary/10 rounded-xl border border-primary/20">
-                        <i data-lucide="user" class="w-6 h-6 text-primary"></i>
+                        <i data-lucide="award" class="w-6 h-6 text-primary"></i>
                     </div>
-                    <h3 class="text-2xl font-bold">Profile Settings</h3>
+                    <h3 class="text-2xl font-bold">Hall of Fame</h3>
                 </div>
                 <button id="close-profile-btn" class="p-2 hover:bg-white/5 rounded-full transition-all">
                     <i data-lucide="x" class="w-5 h-5 text-white/40"></i>
                 </button>
             </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-8">
+                <button id="tab-profile" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all bg-primary text-black">Profile</button>
+                <button id="tab-badges" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all text-white/40 hover:text-white">Badges</button>
+            </div>
             
-            <div class="space-y-8">
+            <div id="profile-tab-content" class="space-y-8">
                 <!-- Nickname Input -->
                 <div>
                     <label class="block text-sm font-bold text-white/40 mb-3 uppercase tracking-widest">Your Nickname</label>
@@ -533,6 +539,25 @@
                     <i data-lucide="check" class="w-5 h-5"></i>
                 </button>
             </div>
+
+            <!-- Badges Tab Content -->
+            <div id="badges-tab-content" class="hidden space-y-6">
+                <div id="badges-grid" class="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                    <!-- Badges will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement Toast -->
+    <div id="achievement-toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-4 p-4 bg-[#121212] border border-primary/50 rounded-2xl shadow-2xl shadow-primary/20 translate-y-32 opacity-0 transition-all duration-500 pointer-events-none">
+        <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shrink-0">
+            <i data-lucide="award" class="w-6 h-6 text-black"></i>
+        </div>
+        <div>
+            <div class="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Achievement Unlocked!</div>
+            <div id="toast-title" class="font-bold text-white">Badge Name</div>
+            <div id="toast-desc" class="text-xs text-white/40">Badge description goes here.</div>
         </div>
     </div>
 
