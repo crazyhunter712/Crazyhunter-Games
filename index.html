@@ -123,7 +123,7 @@
                 <div class="p-1.5 sm:p-2 bg-primary rounded-lg group-hover:rotate-12 transition-transform">
                     <i data-lucide="gamepad-2" class="w-5 h-5 sm:w-6 sm:h-6 text-black"></i>
                 </div>
-                <h1 class="text-lg sm:text-xl font-bold tracking-tighter uppercase">CRAZY <span class="hidden sm:inline">HUNTER</span> <span class="text-primary">HUB</span></h1>
+                <h1 class="text-lg sm:text-xl font-bold tracking-tighter uppercase">CRAZY HUNTER <span class="text-primary">HUB</span></h1>
             </div>
 
             <div class="flex-1 max-w-md mx-8 hidden sm:block">
@@ -182,12 +182,17 @@
                     </div>
                 </div>
 
+                <!-- Mobile Menu Trigger -->
+                <button id="mobile-menu-trigger" class="sm:hidden p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all text-white/60">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
                 <!-- User Profile -->
                 <button id="profile-trigger" class="flex shrink-0 items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-all group">
                     <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl overflow-hidden border border-white/10 bg-primary/20">
                         <img id="header-avatar" src="https://api.dicebear.com/7.x/pixel-art/svg?seed=Guest" alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <div class="flex flex-col items-start">
+                    <div class="flex flex-col items-start hidden xs:flex">
                         <span id="header-nickname" class="text-[10px] sm:text-xs font-bold truncate max-w-[50px] sm:max-w-[80px]">Guest</span>
                         <span class="text-[7px] sm:text-[8px] uppercase tracking-widest text-white/40 font-black">Hunter</span>
                     </div>
@@ -195,7 +200,7 @@
 
                 <button id="request-game-btn" class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary-dark text-black font-bold rounded-xl transition-all shrink-0">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline">Request Game</span>
+                    <span class="hidden md:inline">Request Game</span>
                 </button>
             </div>
         </div>
@@ -485,6 +490,84 @@
                 <h3 class="text-xl font-bold">Request Sent!</h3>
                 <p class="text-white/40 text-sm">We'll look into adding this game to the hub soon.</p>
                 <button id="reset-request" class="text-primary text-sm font-medium hover:underline">Send another request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl hidden opacity-0 transition-all duration-300 sm:hidden">
+        <div class="flex flex-col h-full p-6">
+            <div class="flex items-center justify-between mb-10">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-primary rounded-lg">
+                        <i data-lucide="gamepad-2" class="w-6 h-6 text-black"></i>
+                    </div>
+                    <h2 class="text-xl font-bold tracking-tighter uppercase">MENU</h2>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-white/5 rounded-full transition-all">
+                    <i data-lucide="x" class="w-6 h-6 text-white/40"></i>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Theme Selection -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Switch Theme</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setTheme('orange')" class="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-primary/50 transition-all">
+                            <div class="w-4 h-4 rounded-full bg-[#f97316]"></div>
+                            <span class="font-bold text-sm">Orange</span>
+                        </button>
+                        <button onclick="setTheme('blue')" class="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-blue-500/50 transition-all">
+                            <div class="w-4 h-4 rounded-full bg-[#3b82f6]"></div>
+                            <span class="font-bold text-sm">Blue</span>
+                        </button>
+                        <button onclick="setTheme('purple')" class="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-purple-500/50 transition-all">
+                            <div class="w-4 h-4 rounded-full bg-[#a855f7]"></div>
+                            <span class="font-bold text-sm">Purple</span>
+                        </button>
+                        <button onclick="setTheme('green')" class="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-green-500/50 transition-all">
+                            <div class="w-4 h-4 rounded-full bg-[#22c55e]"></div>
+                            <span class="font-bold text-sm">Green</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Quick Actions</label>
+                    <button id="mobile-random-game" class="w-full flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+                        <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                            <i data-lucide="shuffle" class="w-5 h-5 text-primary"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold">Random Game</div>
+                            <div class="text-[10px] text-white/40">Feeling lucky?</div>
+                        </div>
+                    </button>
+                    <a id="mobile-open-new-tab" href="" target="_blank" class="w-full flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+                        <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                            <i data-lucide="external-link" class="w-5 h-5 text-blue-400"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold">Open in New Tab</div>
+                            <div class="text-[10px] text-white/40">Better for performance</div>
+                        </div>
+                    </a>
+                    <button id="mobile-pwa-info" class="w-full flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+                        <div class="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                            <i data-lucide="help-circle" class="w-5 h-5 text-white/60"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold">How to Install</div>
+                            <div class="text-[10px] text-white/40">Add to your home screen</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-10 text-center">
+                <div class="text-[10px] font-black text-white/10 uppercase tracking-[0.3em]">Crazy Hunter Hub v5.0</div>
             </div>
         </div>
     </div>

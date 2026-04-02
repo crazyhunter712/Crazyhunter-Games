@@ -83,6 +83,14 @@ const tabBadges = document.getElementById('tab-badges');
 const profileTabContent = document.getElementById('profile-tab-content');
 const badgesTabContent = document.getElementById('badges-tab-content');
 
+// Mobile Menu Elements
+const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileRandomGame = document.getElementById('mobile-random-game');
+const mobileOpenNewTab = document.getElementById('mobile-open-new-tab');
+const mobilePwaInfo = document.getElementById('mobile-pwa-info');
+
 const mainContainer = document.getElementById('main-container');
 
 // Request Modal Elements
@@ -684,10 +692,12 @@ resetRequest.addEventListener('click', () => {
     lucide.createIcons();
 });
 
-randomGameBtn.addEventListener('click', () => {
+randomGameBtn.addEventListener('click', pickRandomGame);
+
+function pickRandomGame() {
     const randomGame = games[Math.floor(Math.random() * games.length)];
     openGame(randomGame);
-});
+}
 
 saveScoreBtn.addEventListener('click', () => {
     if (selectedGame) {
@@ -754,6 +764,23 @@ closeProfileBtn.addEventListener('click', closeProfile);
 saveProfileBtn.addEventListener('click', saveProfile);
 tabProfile.addEventListener('click', () => switchTab('profile'));
 tabBadges.addEventListener('click', () => switchTab('badges'));
+
+// Mobile Menu Listeners
+mobileMenuTrigger.addEventListener('click', openMobileMenu);
+closeMobileMenu.addEventListener('click', toggleMobileMenu);
+mobileRandomGame.addEventListener('click', () => {
+    toggleMobileMenu();
+    pickRandomGame();
+});
+mobilePwaInfo.addEventListener('click', () => {
+    toggleMobileMenu();
+    openPwaInfo();
+});
+
+mobileMenu.addEventListener('click', (e) => {
+    if (e.target === mobileMenu) toggleMobileMenu();
+});
+
 profileModal.addEventListener('click', (e) => {
     if (e.target === profileModal) closeProfile();
 });
@@ -903,6 +930,31 @@ function saveProfile() {
     }
 }
 
+// Mobile Menu Logic
+function toggleMobileMenu() {
+    const isHidden = mobileMenu.classList.contains('hidden');
+    if (isHidden) {
+        mobileMenu.classList.remove('hidden');
+        setTimeout(() => {
+            mobileMenu.classList.remove('opacity-0');
+        }, 10);
+    } else {
+        mobileMenu.classList.add('opacity-0');
+        setTimeout(() => {
+            mobileMenu.classList.add('hidden');
+        }, 300);
+    }
+}
+
+function openMobileMenu() {
+    // Update the "Open in New Tab" link in mobile menu
+    if (mobileOpenNewTab) {
+        mobileOpenNewTab.href = window.location.href;
+    }
+    toggleMobileMenu();
+    lucide.createIcons();
+}
+
 // Theme Logic
 window.setTheme = function(themeName) {
     currentTheme = themeName;
@@ -915,6 +967,11 @@ window.setTheme = function(themeName) {
 
     localStorage.setItem('crazyhunter_theme', themeName);
     applyTheme(themeName);
+
+    // Close mobile menu if open
+    if (!mobileMenu.classList.contains('hidden')) {
+        toggleMobileMenu();
+    }
 };
 
 function applyTheme(themeName) {
