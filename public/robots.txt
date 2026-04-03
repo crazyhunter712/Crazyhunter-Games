@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://crazyhunter712.github.io/Crazyhunter-Games/sitemap.xml
